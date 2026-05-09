@@ -207,7 +207,7 @@
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDYXsP91ZKrEMRIvHk1DXTniEa_Cth3N5Q",
+    apiKey: "AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",
     authDomain: "to-do-58ecc.firebaseapp.com",
     databaseURL: "https://to-do-58ecc-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "to-do-58ecc",
@@ -232,7 +232,6 @@
   window._push = push; window._remove = remove;
   window._update = update; window._ref = ref;
 
-  // Handle redirect result when page loads after Google sign-in
   getRedirectResult(auth).catch((e) => {
     console.error('Redirect error:', e.code, e.message);
     document.getElementById('loginLoading').style.display = 'none';
