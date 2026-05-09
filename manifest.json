@@ -1,14 +1,42 @@
 {
   "name": "Us ♥",
   "short_name": "Us",
-  "description": "Our shared space",
-  "start_url": "/us-app/",
+  "description": "Shared tasks, notes, moods & milestones for Leo & Mimi.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f8f0ff",
-  "theme_color": "#9b59b6",
   "orientation": "portrait",
+  "background_color": "#faf5ff",
+  "theme_color": "#7c3aed",
+  "categories": ["productivity", "lifestyle"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Tasks",
+      "short_name": "Tasks",
+      "description": "Open shared task list",
+      "url": "./index.html#tasks",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    }
   ]
 }

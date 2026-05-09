@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator — Us ♥</title></head>
+<body style="font-family:sans-serif;padding:24px;background:#faf5ff">
+<h2>Us ♥ Icon Generator</h2>
+<p>Click each button to download the icon at the right size, then upload it to your repo.</p>
+
+<canvas id="c" style="display:none"></canvas>
+<br>
+<button onclick="dl(192,'icon-192.png')">⬇ Download icon-192.png</button>&nbsp;
+<button onclick="dl(512,'icon-512.png')">⬇ Download icon-512.png</button>&nbsp;
+<button onclick="dl(180,'apple-touch-icon.png')">⬇ Download apple-touch-icon.png</button>
+
+<script>
+function drawIcon(size) {
+  const c = document.getElementById('c');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const r = size * 0.18;
+
+  // Rounded rect clip
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(size - r, 0);
+  ctx.quadraticCurveTo(size, 0, size, r);
+  ctx.lineTo(size, size - r);
+  ctx.quadraticCurveTo(size, size, size - r, size);
+  ctx.lineTo(r, size);
+  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.clip();
+
+  // Gradient background
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, '#5b21b6');
+  g.addColorStop(0.5, '#7c3aed');
+  g.addColorStop(1, '#be185d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+
+  // Subtle inner glow
+  const glow = ctx.createRadialGradient(size*0.5, size*0.38, 0, size*0.5, size*0.38, size*0.55);
+  glow.addColorStop(0, 'rgba(255,255,255,0.18)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+
+  // Heart
+  const hs = size * 0.52;
+  const cx = size / 2;
+  const cy = size * 0.52;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(hs / 100, hs / 100);
+  ctx.beginPath();
+  ctx.moveTo(0, -20);
+  ctx.bezierCurveTo(0, -40, -50, -40, -50, -10);
+  ctx.bezierCurveTo(-50, 20, 0, 50, 0, 50);
+  ctx.bezierCurveTo(0, 50, 50, 20, 50, -10);
+  ctx.bezierCurveTo(50, -40, 0, -40, 0, -20);
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(255,100,180,0.6)';
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fill();
+  ctx.restore();
+}
+
+function dl(size, name) {
+  drawIcon(size);
+  const a = document.createElement('a');
+  a.download = name;
+  a.href = document.getElementById('c').toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>
