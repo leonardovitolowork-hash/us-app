@@ -86,7 +86,7 @@
     .opts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     .olbl{font-size:10px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
     .cpills{display:flex;gap:5px}
-    .cpill{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border .15s;flex-shrink:0}
+    .cpill{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15px,border .15s;flex-shrink:0}
     .cpill:hover{transform:scale(1.25)}
     .cpill.sel{border-color:var(--text);transform:scale(1.25)}
     .asel{padding:5px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;outline:none}
@@ -205,9 +205,10 @@
     .streak-lbl{font-size:14px;font-weight:700}
     .streak-sub{font-size:12px;color:var(--sub);margin-top:2px}
     .mood-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-    .mood-btn{font-size:28px;cursor:pointer;padding:8px;border-radius:14px;border:2px solid transparent;transition:all .2s}
+    .mood-btn{font-size:28px;cursor:pointer;padding:8px;border-radius:14px;border:2px solid transparent;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px}
     .mood-btn:hover{transform:scale(1.2)}
     .mood-btn.sel{border-color:var(--accent);background:var(--pill)}
+    .mood-lbl{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.3px}
     .nudge-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(155,89,182,.3)}
     .nudge-btn:active{transform:scale(.96)}
     .nudge-sent{text-align:center;font-size:13px;color:var(--green);margin-top:8px;display:none}
@@ -421,12 +422,11 @@
         <div class="us-card">
           <div class="us-card-title">💭 Today's mood</div>
           <div class="mood-row" id="moodRow">
-            <span class="mood-btn" onclick="setMood('😊')">😊</span>
-            <span class="mood-btn" onclick="setMood('😍')">😍</span>
-            <span class="mood-btn" onclick="setMood('😴')">😴</span>
-            <span class="mood-btn" onclick="setMood('😤')">😤</span>
-            <span class="mood-btn" onclick="setMood('🥰')">🥰</span>
-            <span class="mood-btn" onclick="setMood('😎')">😎</span>
+            <button class="mood-btn" onclick="setMood('😊')">😊<span class="mood-lbl">Happy</span></button>
+            <button class="mood-btn" onclick="setMood('😢')">😢<span class="mood-lbl">Sad</span></button>
+            <button class="mood-btn" onclick="setMood('😴')">😴<span class="mood-lbl">Sleepy</span></button>
+            <button class="mood-btn" onclick="setMood('🌶️')">🌶️<span class="mood-lbl">Horny</span></button>
+            <button class="mood-btn" onclick="setMood('😑')">😑<span class="mood-lbl">Apathic</span></button>
           </div>
           <div id="moodDisplay" style="text-align:center;margin-top:10px;font-size:13px;color:var(--sub)"></div>
         </div>
@@ -485,7 +485,6 @@ const auth = getAuth(app);
 const prov = new GoogleAuthProvider();
 const ALLOWED = ['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
 
-// expose to global
 window.DB = db; window.REF = ref; window.PUSH = push;
 window.REMOVE = remove; window.UPDATE = update; window.SET = set;
 window.TASKS_REF = ref(db,'tasks');
@@ -524,36 +523,29 @@ onAuthStateChanged(auth, user => {
   document.getElementById('menuName').textContent = user.displayName||'You';
   document.getElementById('menuEmail').textContent = user.email;
   window.setIdentity(email===ALLOWED[0].toLowerCase()?'Leo':'Mimi', true);
-  // connectivity
   onValue(ref(db,'.info/connected'), s => {
     document.getElementById('syncDot').className='sync-dot '+(s.val()?'live':'err');
     document.getElementById('syncLbl').textContent=s.val()?'Live ✓':'Offline';
   });
-  // tasks
   onValue(ref(db,'tasks'), s => {
     window._tasks={};
     if(s.exists()) s.forEach(c=>{window._tasks[c.key]=c.val();});
     renderTasks(); updateStats();
   });
-  // shared note
   onValue(ref(db,'notes/shared'), s => {
     const el=document.getElementById('sharedNote');
     if(!window._editingShared && s.exists()) el.value=s.val();
   });
-  // private notes (stored locally only)
   document.getElementById('leoNote').value=localStorage.getItem('note_leo')||'';
   document.getElementById('mimiNote').value=localStorage.getItem('note_mimi')||'';
-  // milestones
   onValue(ref(db,'milestones'), s => {
     window._milestones={};
     if(s.exists()) s.forEach(c=>{window._milestones[c.key]=c.val();});
     renderMilestones();
   });
-  // moods
   onValue(ref(db,'moods'), s => {
     if(s.exists()) renderMoods(s.val());
   });
-  // nudge
   onValue(ref(db,'nudge'), s => {
     if(s.exists()&&s.val().ts) {
       const ago = Math.floor((Date.now()-s.val().ts)/60000);
@@ -561,7 +553,6 @@ onAuthStateChanged(auth, user => {
         s.val().from+' sent a nudge '+(ago<1?'just now':ago+'m ago')+' 💕';
     }
   });
-  // streak
   updateStreak();
 });
 </script>
@@ -572,6 +563,13 @@ let selColor='purple', urgOn=false, activeFilter='all', compOpen=false;
 window._tasks={}; window._milestones={};
 const COLORS={purple:'#9b59b6',blue:'#3b82f6',pink:'#e91e8c',green:'#22c55e',yellow:'#f59e0b',red:'#ef4444'};
 const RXEMOJI=['❤️','😂','👀','🔥'];
+const MOODS=[
+  {e:'😊',l:'Happy'},
+  {e:'😢',l:'Sad'},
+  {e:'😴',l:'Sleepy'},
+  {e:'🌶️',l:'Horny'},
+  {e:'😑',l:'Apathic'}
+];
 
 function init(){
   buildColors();
@@ -580,7 +578,6 @@ function init(){
   document.getElementById('dtbtn').textContent=dark?'☀️':'🌙';
   document.getElementById('dtbtn').onclick=togDark;
   document.getElementById('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
-  // note autosave
   let noteTimer;
   document.getElementById('sharedNote').addEventListener('input',e=>{
     window._editingShared=true;
@@ -692,8 +689,9 @@ window.deleteTask=deleteTask;
 
 function addReaction(key,emoji){
   if(!identity)return;
-  const path='tasks/'+key+'/reactions/'+emoji+'/'+identity;
-  const cur=window._tasks[key]?.reactions?.[emoji]?.[identity];
+  const path='tasks/'+key+'/reactions/'+encodeURIComponent(emoji)+'/'+identity;
+  const rxObj=window._tasks[key]?.reactions;
+  const cur=rxObj&&rxObj[encodeURIComponent(emoji)]&&rxObj[encodeURIComponent(emoji)][identity];
   if(cur) REMOVE(REF(DB,path));
   else SET(REF(DB,path),true);
 }
@@ -746,7 +744,7 @@ function renderTasks(){
   if(badge>0){badgeEl.style.display='';badgeEl.textContent=badge;}else badgeEl.style.display='none';
   document.getElementById('taskList').innerHTML=fa.length?fa.map(t=>taskCard(t,false)).join(''):'<div class="empty"><div class="ei">🌸</div><p>Nothing here yet!<br>Add something for us 💕</p></div>';
   const fc=completed.filter(ff);
-  document.getElementById('compCount').textContent=fc.length?'('+fc.length+')':"\'";
+  document.getElementById('compCount').textContent=fc.length?'('+fc.length+')':'';
   document.getElementById('compList').innerHTML=fc.length?fc.map(t=>taskCard(t,true)).join(''):'<div style="font-size:13px;color:var(--sub);padding:8px 4px">Nothing completed yet!</div>';
 }
 
@@ -773,7 +771,8 @@ function catBadge(c){
 function reactionsHtml(key,rxObj){
   let h='<div class="reactions">';
   RXEMOJI.forEach(e=>{
-    const users=rxObj&&rxObj[e]?Object.keys(rxObj[e]):[];
+    const eKey=encodeURIComponent(e);
+    const users=rxObj&&rxObj[eKey]?Object.keys(rxObj[eKey]):[];
     const mine=identity&&users.includes(identity);
     h+='<button class="rxbtn'+(mine?' mine':'')+'" onclick="addReaction(\''+key+'\',\''+e+'\')">';
     h+=e;
@@ -799,15 +798,13 @@ function taskCard(t,done){
   const al=t.assign==='Leo'?'💙 Leo':t.assign==='Mimi'?'🌸 Mimi':'💑 Both';
   return '<div class="tcard'+(done?' completed':'')+(t.urgent?' urgent':'')+'" data-key="'+t.key+'" style="border-left:4px solid '+hex+'">'+
     '<div class="tcard-top">'+
-    '<div class="chk'+(done?' done':'')+'" onclick="toggleDone(\''+t.key+'\')" style="'+(done?'background:var(--green);border-color:var(--green)':'')+'">'+
-    (done?'<span style="color:#fff;font-size:13px;font-weight:800">✓</span>':'')+'</div>'+
+    '<div class="chk'+(done?' done':'')+'" onclick="toggleDone(\''+t.key+'\')" style="'+(done?'background:var(--green);border-color:var(--green)':'')+'">'+(done?'<span style="color:#fff;font-size:13px;font-weight:800">✓</span>':'')+'</div>'+
     '<div class="tbody">'+
     '<div class="ttext">'+escH(t.text)+'</div>'+
     '<div class="tmeta">'+
     '<span class="mpill" style="background:'+hex+'22;color:'+hex+'">'+al+'</span>'+
     '<span class="mpill">By '+escH(t.addedBy||'?')+'</span>'+
-    priBadge(t.priority)+
-    catBadge(t.category)+
+    priBadge(t.priority)+catBadge(t.category)+
     (t.urgent?'<span class="mpill" style="background:#fef3c7;color:#92400e">⚡ Urgent</span>':'')+
     dueBadge(t.due)+
     '<span class="mtime">'+timeAgo(t.timestamp)+'</span>'+
@@ -826,7 +823,6 @@ function togCompleted(){
 }
 window.togCompleted=togCompleted;
 
-// ── STATS ──
 function updateStats(){
   const tasks=Object.values(window._tasks);
   const done=tasks.filter(t=>t.done);
@@ -843,38 +839,36 @@ function updateStats(){
   document.getElementById('mimiBarVal').textContent=mimiDone;
 }
 
-// ── STREAK ──
 function updateStreak(){
   const today=new Date().toDateString();
   const last=localStorage.getItem('streak_last');
   let streak=parseInt(localStorage.getItem('streak_count')||'0');
-  if(last===today){/* same day, no change */}
+  if(last===today){}
   else if(last===new Date(Date.now()-86400000).toDateString()){streak++;localStorage.setItem('streak_count',streak);localStorage.setItem('streak_last',today);}
   else{streak=1;localStorage.setItem('streak_count','1');localStorage.setItem('streak_last',today);}
   document.getElementById('streakNum').textContent=streak;
   document.getElementById('streakSub').textContent=streak>1?'Keep it up! 🔥':'Add a task to start your streak!';
 }
 
-// ── MOOD ──
 function setMood(emoji){
   if(!identity)return;
   SET(REF(DB,'moods/'+identity),{emoji,ts:Date.now()});
 }
 function renderMoods(data){
+  const moodLabels={'😊':'Happy','😢':'Sad','😴':'Sleepy','🌶️':'Horny','😑':'Apathic'};
   let txt='';
-  if(data.Leo)txt+='💙 Leo is '+data.Leo.emoji+'  ';
-  if(data.Mimi)txt+='🌸 Mimi is '+data.Mimi.emoji;
+  if(data.Leo)txt+='💙 Leo is '+(moodLabels[data.Leo.emoji]||data.Leo.emoji)+'  ';
+  if(data.Mimi)txt+='🌸 Mimi is '+(moodLabels[data.Mimi.emoji]||data.Mimi.emoji);
   document.getElementById('moodDisplay').textContent=txt.trim();
-  // highlight own
   document.querySelectorAll('.mood-btn').forEach(b=>{
     const today=new Date().toDateString();
     const myMood=data[identity];
-    b.classList.toggle('sel', myMood && b.textContent===myMood.emoji && new Date(myMood.ts).toDateString()===today);
+    const btnEmoji=b.textContent.trim().charAt(0);
+    b.classList.toggle('sel', myMood && myMood.emoji===b.getAttribute('onclick').match(/'([^']+)'/)[1] && new Date(myMood.ts).toDateString()===today);
   });
 }
 window.setMood=setMood;
 
-// ── NUDGE ──
 function sendNudge(){
   if(!identity)return;
   SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});
@@ -884,7 +878,6 @@ function sendNudge(){
 }
 window.sendNudge=sendNudge;
 
-// ── MILESTONES ──
 function addMilestone(){
   const name=document.getElementById('msName').value.trim();
   const date=document.getElementById('msDate').value;
@@ -913,7 +906,6 @@ function renderMilestones(){
   }).join('');
 }
 
-// ── HELPERS ──
 function timeAgo(ts){
   if(!ts)return '';
   const d=Math.floor((Date.now()-ts)/1000);
