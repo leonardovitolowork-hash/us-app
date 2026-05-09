@@ -20,7 +20,6 @@
       --shadow: 0 2px 12px rgba(0,0,0,0.4); --pill-bg: #2a1540;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; }
-
     #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; text-align: center; }
     .login-heart { font-size: 64px; margin-bottom: 16px; animation: heartbeat 1.6s ease-in-out infinite; }
     @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
@@ -33,13 +32,11 @@
     .google-logo { width: 22px; height: 22px; background: url('https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg') center/contain no-repeat; flex-shrink: 0; }
     .login-note { margin-top: 20px; font-size: 12px; color: var(--subtext); }
     .login-loading { margin-top: 20px; font-size: 13px; color: var(--subtext); display: none; }
-
     #blockedScreen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; text-align: center; }
     .blocked-emoji { font-size: 56px; margin-bottom: 16px; }
     .blocked-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
     .blocked-sub { font-size: 14px; color: var(--subtext); margin-bottom: 24px; line-height: 1.5; }
     .signout-btn-blocked { padding: 10px 24px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); color: var(--subtext); font-size: 14px; font-weight: 600; cursor: pointer; }
-
     #app { display: none; }
     .header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
     .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -115,7 +112,6 @@
   </style>
 </head>
 <body>
-
 <div class="confetti-container" id="confettiContainer"></div>
 <div class="toast" id="toast"></div>
 
@@ -200,7 +196,7 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import {
     getAuth, GoogleAuthProvider,
-    signInWithPopup, signOut, onAuthStateChanged
+    signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -229,11 +225,22 @@
   window._push = push; window._remove = remove;
   window._update = update; window._ref = ref;
 
+  getRedirectResult(auth).then((result) => {
+    if (result && result.user) {
+      // user handled by onAuthStateChanged
+    }
+  }).catch((e) => {
+    console.error('Redirect error:', e.code, e.message);
+    document.getElementById('loginLoading').style.display = 'none';
+    document.getElementById('googleSignInBtn').style.display = 'flex';
+    window.showToast('Sign in failed: ' + (e.code || e.message));
+  });
+
   window.signInWithGoogle = async () => {
     document.getElementById('googleSignInBtn').style.display = 'none';
     document.getElementById('loginLoading').style.display = 'block';
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch(e) {
       document.getElementById('loginLoading').style.display = 'none';
       document.getElementById('googleSignInBtn').style.display = 'flex';
