@@ -119,7 +119,6 @@
 <div class="confetti-container" id="confettiContainer"></div>
 <div class="toast" id="toast"></div>
 
-<!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-heart">♥</div>
   <div class="login-title">Us <span>♥</span></div>
@@ -132,7 +131,6 @@
   <div class="login-loading" id="loginLoading">✨ Signing you in…</div>
 </div>
 
-<!-- BLOCKED SCREEN -->
 <div id="blockedScreen">
   <div class="blocked-emoji">🚫</div>
   <div class="blocked-title">Access Denied</div>
@@ -140,7 +138,6 @@
   <button class="signout-btn-blocked" onclick="doSignOut()">Sign out</button>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="header">
     <div class="header-top">
@@ -203,12 +200,12 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import {
     getAuth, GoogleAuthProvider,
-    signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
+    signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",
-    authDomain: "leonardovitolowork-hash.github.io",
+    authDomain: "to-do-58ecc.firebaseapp.com",
     databaseURL: "https://to-do-58ecc-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "to-do-58ecc",
     storageBucket: "to-do-58ecc.firebasestorage.app",
@@ -232,18 +229,11 @@
   window._push = push; window._remove = remove;
   window._update = update; window._ref = ref;
 
-  getRedirectResult(auth).catch((e) => {
-    console.error('Redirect error:', e.code, e.message);
-    document.getElementById('loginLoading').style.display = 'none';
-    document.getElementById('googleSignInBtn').style.display = 'flex';
-    window.showToast('Sign in failed: ' + (e.code || e.message));
-  });
-
   window.signInWithGoogle = async () => {
     document.getElementById('googleSignInBtn').style.display = 'none';
     document.getElementById('loginLoading').style.display = 'block';
     try {
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
     } catch(e) {
       document.getElementById('loginLoading').style.display = 'none';
       document.getElementById('googleSignInBtn').style.display = 'flex';
@@ -301,8 +291,8 @@
     onValue(ref(db, '.info/connected'), (snap) => {
       const dot = document.getElementById('syncDot');
       const lbl = document.getElementById('syncLabel');
-      dot.className     = snap.val() ? 'sync-dot live' : 'sync-dot error';
-      lbl.textContent   = snap.val() ? 'Live ✓' : 'Offline';
+      dot.className   = snap.val() ? 'sync-dot live' : 'sync-dot error';
+      lbl.textContent = snap.val() ? 'Live ✓' : 'Offline';
     });
 
     onValue(tasksRef, (snap) => {
