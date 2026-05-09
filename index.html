@@ -181,7 +181,6 @@
       font-size: 18px; padding: 2px 4px; border-radius: 8px;
     }
 
-    /* identity bar */
     .identity-bar { display: flex; gap: 8px; }
     .identity-btn {
       flex: 1;
@@ -198,7 +197,6 @@
     .identity-btn.active-leo { background: #3b82f6; border-color: #3b82f6; color: white; }
     .identity-btn.active-mimi { background: var(--accent2); border-color: var(--accent2); color: white; }
 
-    /* user menu */
     .user-menu {
       position: fixed;
       top: 60px; right: 16px;
@@ -228,7 +226,6 @@
     }
     .signout-btn:hover { background: #fef2f2; color: #ef4444; border-color: #ef4444; }
 
-    /* content */
     .content { padding: 16px 16px 120px; max-width: 480px; margin: 0 auto; }
 
     .add-section {
@@ -457,7 +454,7 @@
 <div id="blockedScreen">
   <div class="blocked-emoji">🚫</div>
   <div class="blocked-title">Access Denied</div>
-  <div class="blocked-sub" id="blockedMsg">This app is only for Leo & Mimi.<br>You're signed in as an unauthorised account.</div>
+  <div class="blocked-sub" id="blockedMsg">This app is only for Leo & Mimi.</div>
   <button class="signout-btn-blocked" onclick="doSignOut()">Sign out</button>
 </div>
 
@@ -479,7 +476,6 @@
     </div>
   </div>
 
-  <!-- User menu -->
   <div class="user-menu" id="userMenu">
     <div class="user-menu-name" id="menuName"></div>
     <div class="user-menu-email" id="menuEmail"></div>
@@ -524,7 +520,6 @@
   </div>
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, onValue, push, remove, update }
@@ -545,27 +540,25 @@
     measurementId: "G-QJP96Z8X8F"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+  const app  = initializeApp(firebaseConfig);
+  const db   = getDatabase(app);
   const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  const tasksRef = ref(db, 'tasks');
+  const provider  = new GoogleAuthProvider();
+  const tasksRef  = ref(db, 'tasks');
 
-  // ── ALLOWED EMAILS (add both yours and Mimi's here) ──
+  // ── ALLOWED EMAILS ──────────────────────────────────────
   const ALLOWED = [
-    'leonardovitolo@gmail.com',   // ← Leo's Google email
-    'REPLACE_WITH_MIMIS_EMAIL'    // ← Mimi's Google email
+    'leonardovitolowork@gmail.com',   // Leo 💙
+    'demifotaki125@gmail.com'          // Mimi 🌸
   ];
 
-  // Expose globals
-  window._db = db;
+  window._db       = db;
   window._tasksRef = tasksRef;
-  window._push = push;
-  window._remove = remove;
-  window._update = update;
-  window._ref = ref;
+  window._push     = push;
+  window._remove   = remove;
+  window._update   = update;
+  window._ref      = ref;
 
-  // Sign in
   window.signInWithGoogle = async () => {
     try {
       await signInWithPopup(auth, provider);
@@ -576,13 +569,11 @@
     }
   };
 
-  // Sign out
   window.doSignOut = async () => {
     window._closeMenu();
     await signOut(auth);
   };
 
-  // Auth state
   onAuthStateChanged(auth, (user) => {
     const loginScreen   = document.getElementById('loginScreen');
     const blockedScreen = document.getElementById('blockedScreen');
@@ -595,7 +586,7 @@
       return;
     }
 
-    const email = user.email ? user.email.toLowerCase() : '';
+    const email   = (user.email || '').toLowerCase();
     const allowed = ALLOWED.map(e => e.toLowerCase());
 
     if (!allowed.includes(email)) {
@@ -603,11 +594,11 @@
       blockedScreen.style.display = 'flex';
       appEl.style.display         = 'none';
       document.getElementById('blockedMsg').textContent =
-        `This app is only for Leo & Mimi. (${user.email})`;
+        `This app is only for Leo & Mimi. (signed in as ${user.email})`;
       return;
     }
 
-    // Authorised!
+    // ✅ Authorised
     loginScreen.style.display   = 'none';
     blockedScreen.style.display = 'none';
     appEl.style.display         = 'block';
@@ -623,47 +614,34 @@
     document.getElementById('menuName').textContent  = user.displayName || 'You';
     document.getElementById('menuEmail').textContent = user.email;
 
-    // Auto-set identity from email
-    if (email === allowed[0]) {
-      window.setIdentity('Leo', true);
-    } else {
-      window.setIdentity('Mimi', true);
-    }
+    // Auto-identity from email
+    window.setIdentity(email === allowed[0] ? 'Leo' : 'Mimi', true);
 
-    // Connect to DB
-    const connRef = ref(db, '.info/connected');
-    onValue(connRef, (snap) => {
+    // DB connection status
+    onValue(ref(db, '.info/connected'), (snap) => {
       const dot   = document.getElementById('syncDot');
       const label = document.getElementById('syncLabel');
-      if (snap.val()) {
-        dot.className = 'sync-dot live';
-        label.textContent = 'Live ✓';
-      } else {
-        dot.className = 'sync-dot error';
-        label.textContent = 'Offline';
-      }
+      dot.className     = snap.val() ? 'sync-dot live' : 'sync-dot error';
+      label.textContent = snap.val() ? 'Live ✓' : 'Offline';
     });
 
+    // Live task listener
     onValue(tasksRef, (snap) => {
       window._tasks = {};
-      if (snap.exists()) {
-        snap.forEach(child => {
-          window._tasks[child.key] = child.val();
-        });
-      }
+      if (snap.exists()) snap.forEach(c => { window._tasks[c.key] = c.val(); });
       renderTasks();
     });
   });
 </script>
 
 <script>
-  let identity = localStorage.getItem('us_identity') || null;
+  let identity     = localStorage.getItem('us_identity') || null;
   let selectedColor = 'purple';
-  let urgentOn = false;
+  let urgentOn     = false;
   let activeFilter = 'all';
   let completedOpen = false;
-  let menuOpen = false;
-  window._tasks = {};
+  let menuOpen     = false;
+  window._tasks    = {};
 
   const COLORS = {
     purple: '#9b59b6',
@@ -686,17 +664,15 @@
     document.addEventListener('click', (e) => {
       const menu = document.getElementById('userMenu');
       const wrap = document.getElementById('avatarWrap');
-      if (menuOpen && !menu.contains(e.target) && !wrap.contains(e.target)) {
-        window._closeMenu();
-      }
+      if (menuOpen && !menu.contains(e.target) && !wrap.contains(e.target)) window._closeMenu();
     });
   }
 
-  window._toggleMenu = function() {
+  window._toggleMenu = () => {
     menuOpen = !menuOpen;
     document.getElementById('userMenu').className = 'user-menu' + (menuOpen ? ' open' : '');
   };
-  window._closeMenu = function() {
+  window._closeMenu = () => {
     menuOpen = false;
     document.getElementById('userMenu').className = 'user-menu';
   };
@@ -749,15 +725,15 @@
   function addTask() {
     if (!identity) { showToast('Pick Leo or Mimi first! 👆'); return; }
     const input = document.getElementById('taskInput');
-    const text = input.value.trim();
+    const text  = input.value.trim();
     if (!text) return;
     window._push(window._tasksRef, {
       text,
-      color: selectedColor,
-      assign: document.getElementById('assignSelect').value,
-      urgent: urgentOn,
-      done: false,
-      addedBy: identity,
+      color:    selectedColor,
+      assign:   document.getElementById('assignSelect').value,
+      urgent:   urgentOn,
+      done:     false,
+      addedBy:  identity,
       timestamp: Date.now()
     });
     input.value = '';
@@ -769,12 +745,12 @@
   function toggleDone(key) {
     const task = window._tasks[key];
     if (!task) return;
-    const taskRef = window._ref(window._db, 'tasks/' + key);
+    const r = window._ref(window._db, 'tasks/' + key);
     if (!task.done) {
-      window._update(taskRef, { done: true, completedAt: Date.now() });
+      window._update(r, { done: true, completedAt: Date.now() });
       fireConfetti();
     } else {
-      window._update(taskRef, { done: false, completedAt: null });
+      window._update(r, { done: false, completedAt: null });
     }
   }
   window.toggleDone = toggleDone;
@@ -787,8 +763,6 @@
 
   function renderTasks() {
     const tasks = window._tasks;
-    const taskList = document.getElementById('taskList');
-    const completedList = document.getElementById('completedList');
     let active = [], completed = [];
     Object.entries(tasks).forEach(([key, t]) => {
       (t.done ? completed : active).push({ key, ...t });
@@ -805,21 +779,20 @@
     });
     completed.sort((a,b) => (b.completedAt||0) - (a.completedAt||0));
     const filtered = active.filter(filterFn);
-    taskList.innerHTML = filtered.length
+    document.getElementById('taskList').innerHTML = filtered.length
       ? filtered.map(t => taskCard(t)).join('')
       : `<div class="empty-state"><div class="emoji">🌸</div><p>Nothing here yet<br>Add something for us!</p></div>`;
     const cf = completed.filter(filterFn);
     document.getElementById('completedCount').textContent = cf.length ? `(${cf.length})` : '';
-    completedList.innerHTML = cf.length
+    document.getElementById('completedList').innerHTML = cf.length
       ? cf.map(t => taskCard(t)).join('')
       : '<div style="color:var(--subtext);font-size:14px;padding:8px 4px;">Nothing completed yet!</div>';
   }
 
   function taskCard(t) {
     const hex = COLORS[t.color] || COLORS.purple;
-    const ago = timeAgo(t.timestamp);
     const assignLabel = t.assign === 'Leo' ? '💙 Leo' : t.assign === 'Mimi' ? '🌸 Mimi' : '💑 Both';
-    return `<div class="task-card${t.done?' completed':''}${t.urgent?' urgent':''}" style="border-left: 4px solid ${hex};">
+    return `<div class="task-card${t.done?' completed':''}${t.urgent?' urgent':''}" style="border-left:4px solid ${hex};">
       <div class="check-circle${t.done?' done':''}" onclick="toggleDone('${t.key}')"></div>
       <div class="task-body">
         <div class="task-text">${escHtml(t.text)}</div>
@@ -827,7 +800,7 @@
           <span class="meta-pill" style="background:${hex}22;color:${hex}">${assignLabel}</span>
           <span class="meta-pill">By ${escHtml(t.addedBy||'?')}</span>
           ${t.urgent?'<span class="meta-pill" style="background:#fef3c7;color:#92400e;">⚡ Urgent</span>':''}
-          <span class="meta-time">${ago}</span>
+          <span class="meta-time">${timeAgo(t.timestamp)}</span>
         </div>
       </div>
       <button class="delete-btn" onclick="deleteTask('${t.key}')" title="Delete">✕</button>
@@ -859,19 +832,19 @@
       const el = document.createElement('div');
       el.className = 'confetti-piece';
       el.style.left = Math.random()*100+'vw';
-      el.style.top = '-10px';
+      el.style.top  = '-10px';
       el.style.background = cols[Math.floor(Math.random()*cols.length)];
-      el.style.animationDelay = Math.random()*0.4+'s';
+      el.style.animationDelay    = Math.random()*0.4+'s';
       el.style.animationDuration = (0.9+Math.random()*0.6)+'s';
       c.appendChild(el);
-      setTimeout(()=>el.remove(),1600);
+      setTimeout(()=>el.remove(), 1600);
     }
   }
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2200);
+    setTimeout(()=>t.classList.remove('show'), 2200);
   }
   window.showToast = showToast;
 
