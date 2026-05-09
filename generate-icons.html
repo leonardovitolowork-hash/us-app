@@ -1,80 +1,208 @@
 <!DOCTYPE html>
 <html>
-<head><title>Icon Generator — Us ♥</title></head>
-<body style="font-family:sans-serif;padding:24px;background:#faf5ff">
-<h2>Us ♥ Icon Generator</h2>
-<p>Click each button to download the icon at the right size, then upload it to your repo.</p>
+<head>
+<title>Icon Generator — Mimi & Leo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#0d0014;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 20px;gap:24px}
+  h1{font-size:22px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,#a855f7,#a3e635);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  p{font-size:13px;color:#888;text-align:center;max-width:340px;line-height:1.6}
+  #preview{border-radius:22.5%;box-shadow:0 0 60px rgba(163,230,53,.3),0 20px 60px rgba(0,0,0,.8);width:200px;height:200px;image-rendering:crisp-edges}
+  .btns{display:flex;flex-direction:column;gap:10px;width:260px}
+  button{padding:14px 20px;border-radius:14px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:-.2px}
+  .btn-main{background:linear-gradient(135deg,#7c3aed,#a3e635);color:#fff;box-shadow:0 4px 20px rgba(163,230,53,.3)}
+  .btn-main:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(163,230,53,.4)}
+  .btn-sub{background:rgba(255,255,255,.07);color:#ccc;border:1px solid rgba(255,255,255,.1)}
+  .btn-sub:hover{background:rgba(255,255,255,.12)}
+  .note{font-size:11px;color:#555;text-align:center}
+</style>
+</head>
+<body>
 
-<canvas id="c" style="display:none"></canvas>
-<br>
-<button onclick="dl(192,'icon-192.png')">⬇ Download icon-192.png</button>&nbsp;
-<button onclick="dl(512,'icon-512.png')">⬇ Download icon-512.png</button>&nbsp;
-<button onclick="dl(180,'apple-touch-icon.png')">⬇ Download apple-touch-icon.png</button>
+<h1>Mimi & Leo Icon Generator</h1>
+<p>Renders natively at 1024×1024 — sharp at every size, no pixelation.</p>
+
+<canvas id="master" style="display:none"></canvas>
+<canvas id="preview" width="200" height="200"></canvas>
+
+<div class="btns">
+  <button class="btn-main" onclick="dl(1024,'icon-1024.png')">⬇ Download icon-1024.png (master)</button>
+  <button class="btn-sub" onclick="dl(512,'icon-512.png')">⬇ Download icon-512.png</button>
+  <button class="btn-sub" onclick="dl(192,'icon-192.png')">⬇ Download icon-192.png</button>
+  <button class="btn-sub" onclick="dl(180,'apple-touch-icon.png')">⬇ Download apple-touch-icon.png (iOS)</button>
+</div>
+<p class="note">Upload all 4 files to your repo root, then you're done.</p>
 
 <script>
-function drawIcon(size) {
-  const c = document.getElementById('c');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  const r = size * 0.18;
+function drawIcon(ctx, S) {
+  const r = S * 0.2;
 
-  // Rounded rect clip
+  // === ROUNDED RECT CLIP ===
+  ctx.save();
   ctx.beginPath();
   ctx.moveTo(r, 0);
-  ctx.lineTo(size - r, 0);
-  ctx.quadraticCurveTo(size, 0, size, r);
-  ctx.lineTo(size, size - r);
-  ctx.quadraticCurveTo(size, size, size - r, size);
-  ctx.lineTo(r, size);
-  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(S - r, 0);
+  ctx.quadraticCurveTo(S, 0, S, r);
+  ctx.lineTo(S, S - r);
+  ctx.quadraticCurveTo(S, S, S - r, S);
+  ctx.lineTo(r, S);
+  ctx.quadraticCurveTo(0, S, 0, S - r);
   ctx.lineTo(0, r);
   ctx.quadraticCurveTo(0, 0, r, 0);
   ctx.closePath();
   ctx.clip();
 
-  // Gradient background
-  const g = ctx.createLinearGradient(0, 0, size, size);
-  g.addColorStop(0, '#5b21b6');
-  g.addColorStop(0.5, '#7c3aed');
-  g.addColorStop(1, '#be185d');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
+  // === BACKGROUND: deep purple to near-black ===
+  const bg = ctx.createRadialGradient(S*0.5, S*0.35, S*0.05, S*0.5, S*0.5, S*0.75);
+  bg.addColorStop(0, '#3b0d7a');
+  bg.addColorStop(0.5, '#1e0545');
+  bg.addColorStop(1, '#080012');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, S, S);
 
-  // Subtle inner glow
-  const glow = ctx.createRadialGradient(size*0.5, size*0.38, 0, size*0.5, size*0.38, size*0.55);
-  glow.addColorStop(0, 'rgba(255,255,255,0.18)');
-  glow.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, size, size);
+  // === LIME GREEN rim glow (bottom-right) ===
+  const rimGlow = ctx.createRadialGradient(S*0.78, S*0.82, 0, S*0.78, S*0.82, S*0.6);
+  rimGlow.addColorStop(0, 'rgba(163,230,53,0.22)');
+  rimGlow.addColorStop(0.5, 'rgba(132,204,22,0.08)');
+  rimGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rimGlow;
+  ctx.fillRect(0, 0, S, S);
 
-  // Heart
-  const hs = size * 0.52;
-  const cx = size / 2;
-  const cy = size * 0.52;
+  // === LIME GREEN rim glow (top-left mirror) ===
+  const rimGlow2 = ctx.createRadialGradient(S*0.18, S*0.15, 0, S*0.18, S*0.15, S*0.4);
+  rimGlow2.addColorStop(0, 'rgba(163,230,53,0.12)');
+  rimGlow2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = rimGlow2;
+  ctx.fillRect(0, 0, S, S);
+
+  // === HEART shadow/glow underneath ===
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(hs / 100, hs / 100);
-  ctx.beginPath();
-  ctx.moveTo(0, -20);
-  ctx.bezierCurveTo(0, -40, -50, -40, -50, -10);
-  ctx.bezierCurveTo(-50, 20, 0, 50, 0, 50);
-  ctx.bezierCurveTo(0, 50, 50, 20, 50, -10);
-  ctx.bezierCurveTo(50, -40, 0, -40, 0, -20);
-  ctx.closePath();
-  ctx.shadowColor = 'rgba(255,100,180,0.6)';
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.translate(S*0.5, S*0.47);
+  const hS = S * 0.58;
+  ctx.scale(hS/100, hS/100);
+  heartPath(ctx);
+  ctx.shadowColor = 'rgba(163,230,53,0.55)';
+  ctx.shadowBlur = S * 0.08;
+  ctx.fillStyle = 'rgba(163,230,53,0.18)';
   ctx.fill();
+  ctx.restore();
+
+  // === GLOSSY HEART ===
+  ctx.save();
+  ctx.translate(S*0.5, S*0.46);
+  const hs = S * 0.56;
+  ctx.scale(hs/100, hs/100);
+  heartPath(ctx);
+
+  // Heart base — deep purple-glass
+  const hg = ctx.createLinearGradient(-50, -50, 50, 50);
+  hg.addColorStop(0, '#c084fc');
+  hg.addColorStop(0.35, '#7c3aed');
+  hg.addColorStop(0.7, '#4c1d95');
+  hg.addColorStop(1, '#2e0a6e');
+  ctx.fillStyle = hg;
+  ctx.shadowColor = 'rgba(124,58,237,0.9)';
+  ctx.shadowBlur = 30;
+  ctx.fill();
+
+  // Heart lime-green edge highlight
+  heartPath(ctx);
+  ctx.strokeStyle = 'rgba(163,230,53,0.55)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Glossy top reflection
+  ctx.beginPath();
+  ctx.ellipse(-8, -28, 28, 16, -0.3, 0, Math.PI * 2);
+  const refG = ctx.createLinearGradient(-8, -44, -8, -12);
+  refG.addColorStop(0, 'rgba(255,255,255,0.55)');
+  refG.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = refG;
+  ctx.fill();
+
+  // Small specular dot
+  ctx.beginPath();
+  ctx.ellipse(-14, -33, 9, 5, -0.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fill();
+
+  ctx.restore();
+
+  // === TEXT: "Mimi & Leo" ===
+  const fontSize = S * 0.072;
+  ctx.font = `600 ${fontSize}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Text glow
+  ctx.shadowColor = 'rgba(163,230,53,0.8)';
+  ctx.shadowBlur = S * 0.025;
+
+  // Lime-green gradient text
+  const tg = ctx.createLinearGradient(S*0.2, 0, S*0.8, 0);
+  tg.addColorStop(0, '#d4fa6e');
+  tg.addColorStop(0.5, '#a3e635');
+  tg.addColorStop(1, '#65a30d');
+  ctx.fillStyle = tg;
+  ctx.fillText('Mimi & Leo', S * 0.5, S * 0.855);
+
+  // === TOP GLOSS SHEEN (overall) ===
+  const sheen = ctx.createLinearGradient(0, 0, 0, S * 0.5);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.10)');
+  sheen.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+  sheen.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sheen;
+  ctx.fillRect(0, 0, S, S);
+
   ctx.restore();
 }
 
+function heartPath(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(0, -18);
+  ctx.bezierCurveTo(0, -42, -52, -42, -52, -12);
+  ctx.bezierCurveTo(-52, 18, 0, 52, 0, 52);
+  ctx.bezierCurveTo(0, 52, 52, 18, 52, -12);
+  ctx.bezierCurveTo(52, -42, 0, -42, 0, -18);
+  ctx.closePath();
+}
+
 function dl(size, name) {
-  drawIcon(size);
+  const master = document.getElementById('master');
+  master.width = master.height = 1024;
+  const mCtx = master.getContext('2d');
+  mCtx.clearRect(0, 0, 1024, 1024);
+  drawIcon(mCtx, 1024);
+
+  if (size === 1024) {
+    trigger(master, name);
+    return;
+  }
+
+  // Downscale cleanly from master
+  const out = document.createElement('canvas');
+  out.width = out.height = size;
+  const oCtx = out.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = 'high';
+  oCtx.drawImage(master, 0, 0, size, size);
+  trigger(out, name);
+}
+
+function trigger(canvas, name) {
   const a = document.createElement('a');
   a.download = name;
-  a.href = document.getElementById('c').toDataURL('image/png');
+  a.href = canvas.toDataURL('image/png');
   a.click();
 }
+
+// Draw preview on load
+window.onload = () => {
+  const prev = document.getElementById('preview');
+  const ctx = prev.getContext('2d');
+  drawIcon(ctx, 200);
+};
 </script>
 </body>
 </html>
