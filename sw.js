@@ -1,4 +1,4 @@
-const CACHE = 'us-app-v2';
+const CACHE = 'us-app-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -11,9 +11,9 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(cache => {
-      return Promise.allSettled(ASSETS.map(url => cache.add(url).catch(() => {})));
-    })
+    caches.open(CACHE).then(cache =>
+      Promise.allSettled(ASSETS.map(url => cache.add(url).catch(() => {})))
+    )
   );
   self.skipWaiting();
 });
@@ -28,16 +28,42 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Skip Firebase & Google auth requests — always fetch live
   if (
     e.request.url.includes('firebaseio.com') ||
     e.request.url.includes('googleapis.com/identitytoolkit') ||
     e.request.url.includes('securetoken.google') ||
     e.request.url.includes('firebaseapp.com/__/auth')
-  ) {
-    return;
-  }
+  ) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
+
+// ===== PUSH NOTIFICATIONS =====
+self.addEventListener('push', e => {
+  let data = { title: 'Us ♥', body: 'You have a new nudge! 💕', icon: './icon-192.png', badge: './icon-192.png' };
+  try { data = { ...data, ...e.data.json() }; } catch {}
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      vibrate: [200, 100, 200, 100, 200],
+      tag: 'nudge',
+      renotify: true,
+      data: { url: self.location.origin + '/us-app/' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.includes('us-app') && 'focus' in c) return c.focus();
+      }
+      return clients.openWindow(e.notification.data?.url || '/');
+    })
   );
 });
