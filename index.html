@@ -196,7 +196,7 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import {
     getAuth, GoogleAuthProvider,
-    signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
+    signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -225,22 +225,11 @@
   window._push = push; window._remove = remove;
   window._update = update; window._ref = ref;
 
-  getRedirectResult(auth).then((result) => {
-    if (result && result.user) {
-      // user handled by onAuthStateChanged
-    }
-  }).catch((e) => {
-    console.error('Redirect error:', e.code, e.message);
-    document.getElementById('loginLoading').style.display = 'none';
-    document.getElementById('googleSignInBtn').style.display = 'flex';
-    window.showToast('Sign in failed: ' + (e.code || e.message));
-  });
-
   window.signInWithGoogle = async () => {
     document.getElementById('googleSignInBtn').style.display = 'none';
     document.getElementById('loginLoading').style.display = 'block';
     try {
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
     } catch(e) {
       document.getElementById('loginLoading').style.display = 'none';
       document.getElementById('googleSignInBtn').style.display = 'flex';
