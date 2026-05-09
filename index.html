@@ -9,365 +9,85 @@
   <meta name="theme-color" content="#f8f0ff" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #f8f0ff;
-      --card: #ffffff;
-      --text: #1a1a2e;
-      --subtext: #666;
-      --border: #e8d5f5;
-      --accent: #9b59b6;
-      --accent2: #e91e8c;
-      --shadow: 0 2px 12px rgba(155,89,182,0.10);
-      --pill-bg: #f3e8ff;
+      --bg: #f8f0ff; --card: #ffffff; --text: #1a1a2e; --subtext: #666;
+      --border: #e8d5f5; --accent: #9b59b6; --accent2: #e91e8c;
+      --shadow: 0 2px 12px rgba(155,89,182,0.10); --pill-bg: #f3e8ff;
     }
     body.dark {
-      --bg: #12091a;
-      --card: #1e1030;
-      --text: #f0e6ff;
-      --subtext: #a888cc;
-      --border: #3a2255;
-      --accent: #c084fc;
-      --accent2: #f472b6;
-      --shadow: 0 2px 12px rgba(0,0,0,0.4);
-      --pill-bg: #2a1540;
+      --bg: #12091a; --card: #1e1030; --text: #f0e6ff; --subtext: #a888cc;
+      --border: #3a2255; --accent: #c084fc; --accent2: #f472b6;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4); --pill-bg: #2a1540;
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; }
 
-    /* ── LOGIN SCREEN ── */
-    #loginScreen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 32px 24px;
-      text-align: center;
-    }
-    .login-heart {
-      font-size: 64px;
-      margin-bottom: 16px;
-      animation: heartbeat 1.6s ease-in-out infinite;
-    }
-    @keyframes heartbeat {
-      0%,100% { transform: scale(1); }
-      50% { transform: scale(1.12); }
-    }
-    .login-title {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 6px;
-      letter-spacing: -0.5px;
-    }
+    #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; text-align: center; }
+    .login-heart { font-size: 64px; margin-bottom: 16px; animation: heartbeat 1.6s ease-in-out infinite; }
+    @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+    .login-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
     .login-title span { color: var(--accent2); }
-    .login-sub {
-      font-size: 15px;
-      color: var(--subtext);
-      margin-bottom: 36px;
-      line-height: 1.5;
-    }
-    .google-btn {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 28px;
-      background: white;
-      color: #3c4043;
-      border: 1.5px solid #dadce0;
-      border-radius: 50px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: box-shadow 0.2s, transform 0.15s;
-    }
+    .login-sub { font-size: 15px; color: var(--subtext); margin-bottom: 36px; line-height: 1.5; }
+    .google-btn { display: flex; align-items: center; gap: 12px; padding: 14px 28px; background: white; color: #3c4043; border: 1.5px solid #dadce0; border-radius: 50px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: box-shadow 0.2s, transform 0.15s; }
     .google-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.15); transform: translateY(-1px); }
     .google-btn:active { transform: scale(0.97); }
-    .google-logo {
-      width: 22px; height: 22px;
-      background: url('https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg') center/contain no-repeat;
-      flex-shrink: 0;
-    }
-    .login-note {
-      margin-top: 20px;
-      font-size: 12px;
-      color: var(--subtext);
-    }
+    .google-logo { width: 22px; height: 22px; background: url('https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg') center/contain no-repeat; flex-shrink: 0; }
+    .login-note { margin-top: 20px; font-size: 12px; color: var(--subtext); }
+    .login-loading { margin-top: 20px; font-size: 13px; color: var(--subtext); display: none; }
 
-    /* ── BLOCKED SCREEN ── */
-    #blockedScreen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 32px 24px;
-      text-align: center;
-    }
+    #blockedScreen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; text-align: center; }
     .blocked-emoji { font-size: 56px; margin-bottom: 16px; }
     .blocked-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
     .blocked-sub { font-size: 14px; color: var(--subtext); margin-bottom: 24px; line-height: 1.5; }
-    .signout-btn-blocked {
-      padding: 10px 24px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--card);
-      color: var(--subtext);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    .signout-btn-blocked { padding: 10px 24px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); color: var(--subtext); font-size: 14px; font-weight: 600; cursor: pointer; }
 
-    /* ── APP ── */
     #app { display: none; }
-
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--bg);
-      padding: 14px 16px 10px;
-      border-bottom: 1px solid var(--border);
-    }
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
+    .header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
     .header-title span { color: var(--accent2); }
     .header-right { display: flex; gap: 8px; align-items: center; }
-
-    .sync-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: #ccc;
-      display: inline-block;
-      transition: background 0.3s;
-    }
+    .sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; display: inline-block; transition: background 0.3s; }
     .sync-dot.live { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
     .sync-dot.error { background: #ef4444; }
     .sync-label { font-size: 12px; color: var(--subtext); }
-
-    .user-avatar {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--accent);
-      cursor: pointer;
-    }
-    .user-avatar-placeholder {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: white;
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 2px solid var(--accent);
-    }
-    .dark-toggle {
-      background: none; border: none; cursor: pointer;
-      font-size: 18px; padding: 2px 4px; border-radius: 8px;
-    }
-
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); cursor: pointer; }
+    .user-avatar-placeholder { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--accent); }
+    .dark-toggle { background: none; border: none; cursor: pointer; font-size: 18px; padding: 2px 4px; border-radius: 8px; }
     .identity-bar { display: flex; gap: 8px; }
-    .identity-btn {
-      flex: 1;
-      padding: 7px 0;
-      border-radius: 20px;
-      border: 2px solid var(--border);
-      background: var(--card);
-      color: var(--subtext);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .identity-btn { flex: 1; padding: 7px 0; border-radius: 20px; border: 2px solid var(--border); background: var(--card); color: var(--subtext); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .identity-btn.active-leo { background: #3b82f6; border-color: #3b82f6; color: white; }
     .identity-btn.active-mimi { background: var(--accent2); border-color: var(--accent2); color: white; }
-
-    .user-menu {
-      position: fixed;
-      top: 60px; right: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      z-index: 500;
-      min-width: 220px;
-      display: none;
-    }
+    .user-menu { position: fixed; top: 60px; right: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 500; min-width: 220px; display: none; }
     .user-menu.open { display: block; }
     .user-menu-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
     .user-menu-email { font-size: 12px; color: var(--subtext); margin-bottom: 14px; }
-    .signout-btn {
-      width: 100%;
-      padding: 9px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .signout-btn { width: 100%; padding: 9px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     .signout-btn:hover { background: #fef2f2; color: #ef4444; border-color: #ef4444; }
-
     .content { padding: 16px 16px 120px; max-width: 480px; margin: 0 auto; }
-
-    .add-section {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
+    .add-section { background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
     .add-row { display: flex; gap: 8px; margin-bottom: 10px; }
-    .task-input {
-      flex: 1;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 15px;
-      outline: none;
-      transition: border 0.2s;
-    }
+    .task-input { flex: 1; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; outline: none; transition: border 0.2s; }
     .task-input:focus { border-color: var(--accent); }
-    .add-btn {
-      padding: 10px 16px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 20px;
-      cursor: pointer;
-      transition: transform 0.15s;
-      line-height: 1;
-    }
+    .add-btn { padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 20px; cursor: pointer; transition: transform 0.15s; line-height: 1; }
     .add-btn:active { transform: scale(0.93); }
-
     .options-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .option-label {
-      font-size: 11px;
-      color: var(--subtext);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-right: 2px;
-    }
+    .option-label { font-size: 11px; color: var(--subtext); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
     .color-pills { display: flex; gap: 6px; }
-    .color-pill {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: transform 0.15s, border 0.15s;
-    }
+    .color-pill { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border 0.15s; }
     .color-pill:hover { transform: scale(1.2); }
     .color-pill.selected { border-color: var(--text); transform: scale(1.2); }
-    .assign-select {
-      padding: 5px 10px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 13px;
-      cursor: pointer;
-      outline: none;
-    }
-    .urgent-toggle {
-      padding: 5px 12px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--bg);
-      color: var(--subtext);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .assign-select { padding: 5px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer; outline: none; }
+    .urgent-toggle { padding: 5px 12px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--subtext); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .urgent-toggle.on { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
     body.dark .urgent-toggle.on { background: #3d2a00; border-color: #f59e0b; color: #fcd34d; }
-
-    .filters {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 14px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-    }
+    .filters { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
     .filters::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--card);
-      color: var(--subtext);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-    }
+    .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card); color: var(--subtext); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
     .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
-
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--subtext);
-      margin: 18px 0 8px;
-    }
-
-    .task-card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 8px;
-      box-shadow: var(--shadow);
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-    .task-card.urgent::after {
-      content: '⚡';
-      position: absolute;
-      top: 8px; right: 10px;
-      font-size: 13px;
-    }
-    .check-circle {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      cursor: pointer;
-      flex-shrink: 0;
-      margin-top: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--subtext); margin: 18px 0 8px; }
+    .task-card { background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--shadow); border: 1.5px solid var(--border); display: flex; align-items: flex-start; gap: 10px; position: relative; overflow: hidden; }
+    .task-card.urgent::after { content: '⚡'; position: absolute; top: 8px; right: 10px; font-size: 13px; }
+    .check-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .check-circle:hover { border-color: var(--accent); }
     .check-circle.done { background: #22c55e; border-color: #22c55e; }
     .check-circle.done::after { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
@@ -375,61 +95,22 @@
     .task-text { font-size: 15px; font-weight: 500; line-height: 1.4; word-break: break-word; }
     .task-card.completed .task-text { text-decoration: line-through; opacity: 0.5; }
     .task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
-    .meta-pill {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 8px;
-      background: var(--pill-bg);
-      color: var(--subtext);
-      font-weight: 600;
-    }
+    .meta-pill { font-size: 11px; padding: 2px 8px; border-radius: 8px; background: var(--pill-bg); color: var(--subtext); font-weight: 600; }
     .meta-time { font-size: 11px; color: var(--subtext); }
-    .delete-btn {
-      background: none; border: none; cursor: pointer;
-      color: var(--subtext); font-size: 16px; padding: 2px 4px;
-      border-radius: 6px; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0;
-    }
+    .delete-btn { background: none; border: none; cursor: pointer; color: var(--subtext); font-size: 16px; padding: 2px 4px; border-radius: 6px; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; }
     .delete-btn:hover { opacity: 1; color: #ef4444; }
-
-    .completed-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      margin: 16px 0 6px;
-      user-select: none;
-    }
+    .completed-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 16px 0 6px; user-select: none; }
     .completed-toggle-icon { font-size: 13px; transition: transform 0.2s; }
     .completed-toggle-icon.open { transform: rotate(90deg); }
     .completed-list { display: none; }
     .completed-list.open { display: block; }
-
     .empty-state { text-align: center; padding: 40px 20px; color: var(--subtext); }
     .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
     .empty-state p { font-size: 15px; }
-
-    .confetti-container {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none; z-index: 9999; overflow: hidden;
-    }
-    .confetti-piece {
-      position: absolute; width: 8px; height: 8px;
-      border-radius: 2px;
-      animation: confetti-fall 1.2s ease-out forwards;
-    }
-    @keyframes confetti-fall {
-      0% { opacity: 1; transform: translateY(-20px) rotate(0deg); }
-      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
-    }
-    .toast {
-      position: fixed; bottom: 30px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1a1a2e; color: white;
-      padding: 10px 20px; border-radius: 20px;
-      font-size: 14px; opacity: 0; transition: all 0.3s;
-      z-index: 1000; pointer-events: none; white-space: nowrap;
-    }
+    .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+    .confetti-piece { position: absolute; width: 8px; height: 8px; border-radius: 2px; animation: confetti-fall 1.2s ease-out forwards; }
+    @keyframes confetti-fall { 0% { opacity: 1; transform: translateY(-20px) rotate(0deg); } 100% { opacity: 0; transform: translateY(100vh) rotate(720deg); } }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1a2e; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all 0.3s; z-index: 1000; pointer-events: none; white-space: nowrap; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
@@ -443,11 +124,12 @@
   <div class="login-heart">♥</div>
   <div class="login-title">Us <span>♥</span></div>
   <div class="login-sub">Our shared space.<br>Sign in to see the list.</div>
-  <button class="google-btn" onclick="signInWithGoogle()">
+  <button class="google-btn" id="googleSignInBtn" onclick="signInWithGoogle()">
     <div class="google-logo"></div>
     Continue with Google
   </button>
   <div class="login-note">Only Leo & Mimi can access this app 🔒</div>
+  <div class="login-loading" id="loginLoading">✨ Signing you in…</div>
 </div>
 
 <!-- BLOCKED SCREEN -->
@@ -475,13 +157,11 @@
       <button class="identity-btn" id="btnMimi" onclick="setIdentity('Mimi')">🌸 Mimi</button>
     </div>
   </div>
-
   <div class="user-menu" id="userMenu">
     <div class="user-menu-name" id="menuName"></div>
     <div class="user-menu-email" id="menuEmail"></div>
     <button class="signout-btn" onclick="doSignOut()">Sign out</button>
   </div>
-
   <div class="content">
     <div class="add-section">
       <div class="add-row">
@@ -500,7 +180,6 @@
         <button class="urgent-toggle" id="urgentToggle" onclick="toggleUrgent()">⚡ Urgent</button>
       </div>
     </div>
-
     <div class="filters">
       <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
       <button class="filter-btn" onclick="setFilter('Leo', this)">💙 Leo</button>
@@ -508,9 +187,7 @@
       <button class="filter-btn" onclick="setFilter('Both', this)">💑 Both</button>
       <button class="filter-btn" onclick="setFilter('urgent', this)">⚡ Urgent</button>
     </div>
-
     <div id="taskList"></div>
-
     <div class="completed-toggle" onclick="toggleCompleted()">
       <span class="completed-toggle-icon" id="completedIcon">▶</span>
       <span class="section-title" style="margin:0;">Completed</span>
@@ -526,7 +203,7 @@
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import {
     getAuth, GoogleAuthProvider,
-    signInWithPopup, signOut, onAuthStateChanged
+    signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -540,32 +217,38 @@
     measurementId: "G-QJP96Z8X8F"
   };
 
-  const app  = initializeApp(firebaseConfig);
-  const db   = getDatabase(app);
-  const auth = getAuth(app);
-  const provider  = new GoogleAuthProvider();
-  const tasksRef  = ref(db, 'tasks');
+  const app      = initializeApp(firebaseConfig);
+  const db       = getDatabase(app);
+  const auth     = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  const tasksRef = ref(db, 'tasks');
 
-  // ── ALLOWED EMAILS ──────────────────────────────────────
   const ALLOWED = [
-    'leonardovitolowork@gmail.com',   // Leo 💙
-    'demifotaki125@gmail.com'          // Mimi 🌸
+    'leonardovitolowork@gmail.com',
+    'demifotaki125@gmail.com'
   ];
 
-  window._db       = db;
-  window._tasksRef = tasksRef;
-  window._push     = push;
-  window._remove   = remove;
-  window._update   = update;
-  window._ref      = ref;
+  window._db = db; window._tasksRef = tasksRef;
+  window._push = push; window._remove = remove;
+  window._update = update; window._ref = ref;
+
+  // Handle redirect result when page loads after Google sign-in
+  getRedirectResult(auth).catch((e) => {
+    console.error('Redirect error:', e.code, e.message);
+    document.getElementById('loginLoading').style.display = 'none';
+    document.getElementById('googleSignInBtn').style.display = 'flex';
+    window.showToast('Sign in failed: ' + (e.code || e.message));
+  });
 
   window.signInWithGoogle = async () => {
+    document.getElementById('googleSignInBtn').style.display = 'none';
+    document.getElementById('loginLoading').style.display = 'block';
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch(e) {
-      if (e.code !== 'auth/popup-closed-by-user') {
-        window.showToast('Sign in failed. Try again.');
-      }
+      document.getElementById('loginLoading').style.display = 'none';
+      document.getElementById('googleSignInBtn').style.display = 'flex';
+      window.showToast('Error: ' + (e.code || e.message));
     }
   };
 
@@ -580,6 +263,8 @@
     const appEl         = document.getElementById('app');
 
     if (!user) {
+      document.getElementById('loginLoading').style.display = 'none';
+      document.getElementById('googleSignInBtn').style.display = 'flex';
       loginScreen.style.display   = 'flex';
       blockedScreen.style.display = 'none';
       appEl.style.display         = 'none';
@@ -594,7 +279,7 @@
       blockedScreen.style.display = 'flex';
       appEl.style.display         = 'none';
       document.getElementById('blockedMsg').textContent =
-        `This app is only for Leo & Mimi. (signed in as ${user.email})`;
+        'This app is only for Leo & Mimi. (signed in as ' + user.email + ')';
       return;
     }
 
@@ -603,29 +288,25 @@
     blockedScreen.style.display = 'none';
     appEl.style.display         = 'block';
 
-    // Avatar
     const wrap = document.getElementById('avatarWrap');
     if (user.photoURL) {
-      wrap.innerHTML = `<img class="user-avatar" src="${user.photoURL}" onclick="window._toggleMenu()" />`;
+      wrap.innerHTML = '<img class="user-avatar" src="' + user.photoURL + '" onclick="window._toggleMenu()" />';
     } else {
       const initial = (user.displayName || user.email || '?')[0].toUpperCase();
-      wrap.innerHTML = `<div class="user-avatar-placeholder" onclick="window._toggleMenu()">${initial}</div>`;
+      wrap.innerHTML = '<div class="user-avatar-placeholder" onclick="window._toggleMenu()">' + initial + '</div>';
     }
     document.getElementById('menuName').textContent  = user.displayName || 'You';
     document.getElementById('menuEmail').textContent = user.email;
 
-    // Auto-identity from email
     window.setIdentity(email === allowed[0] ? 'Leo' : 'Mimi', true);
 
-    // DB connection status
     onValue(ref(db, '.info/connected'), (snap) => {
-      const dot   = document.getElementById('syncDot');
-      const label = document.getElementById('syncLabel');
+      const dot = document.getElementById('syncDot');
+      const lbl = document.getElementById('syncLabel');
       dot.className     = snap.val() ? 'sync-dot live' : 'sync-dot error';
-      label.textContent = snap.val() ? 'Live ✓' : 'Offline';
+      lbl.textContent   = snap.val() ? 'Live ✓' : 'Offline';
     });
 
-    // Live task listener
     onValue(tasksRef, (snap) => {
       window._tasks = {};
       if (snap.exists()) snap.forEach(c => { window._tasks[c.key] = c.val(); });
@@ -635,22 +316,12 @@
 </script>
 
 <script>
-  let identity     = localStorage.getItem('us_identity') || null;
-  let selectedColor = 'purple';
-  let urgentOn     = false;
-  let activeFilter = 'all';
-  let completedOpen = false;
-  let menuOpen     = false;
-  window._tasks    = {};
+  let identity = localStorage.getItem('us_identity') || null;
+  let selectedColor = 'purple', urgentOn = false, activeFilter = 'all';
+  let completedOpen = false, menuOpen = false;
+  window._tasks = {};
 
-  const COLORS = {
-    purple: '#9b59b6',
-    blue:   '#3b82f6',
-    pink:   '#e91e8c',
-    green:  '#22c55e',
-    yellow: '#f59e0b',
-    red:    '#ef4444'
-  };
+  const COLORS = { purple:'#9b59b6', blue:'#3b82f6', pink:'#e91e8c', green:'#22c55e', yellow:'#f59e0b', red:'#ef4444' };
 
   function init() {
     buildColorPills();
@@ -658,31 +329,22 @@
     if (dark) document.body.classList.add('dark');
     document.getElementById('darkToggle').textContent = dark ? '☀️' : '🌙';
     document.getElementById('darkToggle').onclick = toggleDark;
-    document.getElementById('taskInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') addTask();
-    });
+    document.getElementById('taskInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
     document.addEventListener('click', (e) => {
-      const menu = document.getElementById('userMenu');
-      const wrap = document.getElementById('avatarWrap');
+      const menu = document.getElementById('userMenu'), wrap = document.getElementById('avatarWrap');
       if (menuOpen && !menu.contains(e.target) && !wrap.contains(e.target)) window._closeMenu();
     });
   }
 
-  window._toggleMenu = () => {
-    menuOpen = !menuOpen;
-    document.getElementById('userMenu').className = 'user-menu' + (menuOpen ? ' open' : '');
-  };
-  window._closeMenu = () => {
-    menuOpen = false;
-    document.getElementById('userMenu').className = 'user-menu';
-  };
+  window._toggleMenu = () => { menuOpen = !menuOpen; document.getElementById('userMenu').className = 'user-menu' + (menuOpen ? ' open' : ''); };
+  window._closeMenu  = () => { menuOpen = false; document.getElementById('userMenu').className = 'user-menu'; };
 
   function setIdentity(name, silent) {
     identity = name;
     localStorage.setItem('us_identity', name);
     document.getElementById('btnLeo').className  = 'identity-btn' + (name === 'Leo'  ? ' active-leo'  : '');
     document.getElementById('btnMimi').className = 'identity-btn' + (name === 'Mimi' ? ' active-mimi' : '');
-    if (!silent) showToast(`You're ${name} 💙`);
+    if (!silent) showToast("You're " + name + ' 💙');
   }
   window.setIdentity = setIdentity;
 
@@ -697,114 +359,66 @@
     Object.entries(COLORS).forEach(([name, hex]) => {
       const div = document.createElement('div');
       div.className = 'color-pill' + (name === selectedColor ? ' selected' : '');
-      div.style.background = hex;
-      div.title = name;
-      div.onclick = () => {
-        selectedColor = name;
-        document.querySelectorAll('.color-pill').forEach(p => p.classList.remove('selected'));
-        div.classList.add('selected');
-      };
+      div.style.background = hex; div.title = name;
+      div.onclick = () => { selectedColor = name; document.querySelectorAll('.color-pill').forEach(p => p.classList.remove('selected')); div.classList.add('selected'); };
       container.appendChild(div);
     });
   }
 
-  function toggleUrgent() {
-    urgentOn = !urgentOn;
-    document.getElementById('urgentToggle').className = 'urgent-toggle' + (urgentOn ? ' on' : '');
-  }
+  function toggleUrgent() { urgentOn = !urgentOn; document.getElementById('urgentToggle').className = 'urgent-toggle' + (urgentOn ? ' on' : ''); }
   window.toggleUrgent = toggleUrgent;
 
-  function setFilter(f, btn) {
-    activeFilter = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderTasks();
-  }
+  function setFilter(f, btn) { activeFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderTasks(); }
   window.setFilter = setFilter;
 
   function addTask() {
     if (!identity) { showToast('Pick Leo or Mimi first! 👆'); return; }
     const input = document.getElementById('taskInput');
-    const text  = input.value.trim();
+    const text = input.value.trim();
     if (!text) return;
-    window._push(window._tasksRef, {
-      text,
-      color:    selectedColor,
-      assign:   document.getElementById('assignSelect').value,
-      urgent:   urgentOn,
-      done:     false,
-      addedBy:  identity,
-      timestamp: Date.now()
-    });
-    input.value = '';
-    urgentOn = false;
+    window._push(window._tasksRef, { text, color: selectedColor, assign: document.getElementById('assignSelect').value, urgent: urgentOn, done: false, addedBy: identity, timestamp: Date.now() });
+    input.value = ''; urgentOn = false;
     document.getElementById('urgentToggle').className = 'urgent-toggle';
   }
   window.addTask = addTask;
 
   function toggleDone(key) {
-    const task = window._tasks[key];
-    if (!task) return;
+    const task = window._tasks[key]; if (!task) return;
     const r = window._ref(window._db, 'tasks/' + key);
-    if (!task.done) {
-      window._update(r, { done: true, completedAt: Date.now() });
-      fireConfetti();
-    } else {
-      window._update(r, { done: false, completedAt: null });
-    }
+    if (!task.done) { window._update(r, { done: true, completedAt: Date.now() }); fireConfetti(); }
+    else { window._update(r, { done: false, completedAt: null }); }
   }
   window.toggleDone = toggleDone;
 
-  function deleteTask(key) {
-    window._remove(window._ref(window._db, 'tasks/' + key));
-    showToast('Task removed 🗑️');
-  }
+  function deleteTask(key) { window._remove(window._ref(window._db, 'tasks/' + key)); showToast('Task removed 🗑️'); }
   window.deleteTask = deleteTask;
 
   function renderTasks() {
-    const tasks = window._tasks;
     let active = [], completed = [];
-    Object.entries(tasks).forEach(([key, t]) => {
-      (t.done ? completed : active).push({ key, ...t });
-    });
-    const filterFn = t => {
-      if (activeFilter === 'all') return true;
-      if (activeFilter === 'urgent') return t.urgent;
-      return t.assign === activeFilter;
-    };
-    active.sort((a,b) => {
-      if (a.urgent && !b.urgent) return -1;
-      if (!a.urgent && b.urgent) return 1;
-      return (b.timestamp||0) - (a.timestamp||0);
-    });
-    completed.sort((a,b) => (b.completedAt||0) - (a.completedAt||0));
+    Object.entries(window._tasks).forEach(([key, t]) => (t.done ? completed : active).push({ key, ...t }));
+    const filterFn = t => activeFilter === 'all' ? true : activeFilter === 'urgent' ? t.urgent : t.assign === activeFilter;
+    active.sort((a,b) => { if (a.urgent && !b.urgent) return -1; if (!a.urgent && b.urgent) return 1; return (b.timestamp||0)-(a.timestamp||0); });
+    completed.sort((a,b) => (b.completedAt||0)-(a.completedAt||0));
     const filtered = active.filter(filterFn);
-    document.getElementById('taskList').innerHTML = filtered.length
-      ? filtered.map(t => taskCard(t)).join('')
-      : `<div class="empty-state"><div class="emoji">🌸</div><p>Nothing here yet<br>Add something for us!</p></div>`;
+    document.getElementById('taskList').innerHTML = filtered.length ? filtered.map(t => taskCard(t)).join('') : '<div class="empty-state"><div class="emoji">🌸</div><p>Nothing here yet<br>Add something for us!</p></div>';
     const cf = completed.filter(filterFn);
-    document.getElementById('completedCount').textContent = cf.length ? `(${cf.length})` : '';
-    document.getElementById('completedList').innerHTML = cf.length
-      ? cf.map(t => taskCard(t)).join('')
-      : '<div style="color:var(--subtext);font-size:14px;padding:8px 4px;">Nothing completed yet!</div>';
+    document.getElementById('completedCount').textContent = cf.length ? '(' + cf.length + ')' : '';
+    document.getElementById('completedList').innerHTML = cf.length ? cf.map(t => taskCard(t)).join('') : '<div style="color:var(--subtext);font-size:14px;padding:8px 4px;">Nothing completed yet!</div>';
   }
 
   function taskCard(t) {
     const hex = COLORS[t.color] || COLORS.purple;
     const assignLabel = t.assign === 'Leo' ? '💙 Leo' : t.assign === 'Mimi' ? '🌸 Mimi' : '💑 Both';
-    return `<div class="task-card${t.done?' completed':''}${t.urgent?' urgent':''}" style="border-left:4px solid ${hex};">
-      <div class="check-circle${t.done?' done':''}" onclick="toggleDone('${t.key}')"></div>
-      <div class="task-body">
-        <div class="task-text">${escHtml(t.text)}</div>
-        <div class="task-meta">
-          <span class="meta-pill" style="background:${hex}22;color:${hex}">${assignLabel}</span>
-          <span class="meta-pill">By ${escHtml(t.addedBy||'?')}</span>
-          ${t.urgent?'<span class="meta-pill" style="background:#fef3c7;color:#92400e;">⚡ Urgent</span>':''}
-          <span class="meta-time">${timeAgo(t.timestamp)}</span>
-        </div>
-      </div>
-      <button class="delete-btn" onclick="deleteTask('${t.key}')" title="Delete">✕</button>
-    </div>`;
+    return '<div class="task-card' + (t.done?' completed':'') + (t.urgent?' urgent':'') + '" style="border-left:4px solid ' + hex + ';">' +
+      '<div class="check-circle' + (t.done?' done':'') + '" onclick="toggleDone(\'' + t.key + '\')"></div>' +
+      '<div class="task-body"><div class="task-text">' + escHtml(t.text) + '</div>' +
+      '<div class="task-meta">' +
+      '<span class="meta-pill" style="background:' + hex + '22;color:' + hex + '">' + assignLabel + '</span>' +
+      '<span class="meta-pill">By ' + escHtml(t.addedBy||'?') + '</span>' +
+      (t.urgent ? '<span class="meta-pill" style="background:#fef3c7;color:#92400e;">⚡ Urgent</span>' : '') +
+      '<span class="meta-time">' + timeAgo(t.timestamp) + '</span>' +
+      '</div></div>' +
+      '<button class="delete-btn" onclick="deleteTask(\'' + t.key + '\')" title="Delete">✕</button></div>';
   }
 
   function toggleCompleted() {
@@ -822,32 +436,24 @@
     if (d < 86400) return Math.floor(d/3600)+'h ago';
     return Math.floor(d/86400)+'d ago';
   }
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fireConfetti() {
     const c = document.getElementById('confettiContainer');
     const cols = ['#9b59b6','#e91e8c','#3b82f6','#22c55e','#f59e0b','#ef4444'];
     for (let i=0;i<30;i++) {
-      const el = document.createElement('div');
-      el.className = 'confetti-piece';
-      el.style.left = Math.random()*100+'vw';
-      el.style.top  = '-10px';
+      const el = document.createElement('div'); el.className = 'confetti-piece';
+      el.style.left = Math.random()*100+'vw'; el.style.top = '-10px';
       el.style.background = cols[Math.floor(Math.random()*cols.length)];
-      el.style.animationDelay    = Math.random()*0.4+'s';
+      el.style.animationDelay = Math.random()*0.4+'s';
       el.style.animationDuration = (0.9+Math.random()*0.6)+'s';
-      c.appendChild(el);
-      setTimeout(()=>el.remove(), 1600);
+      c.appendChild(el); setTimeout(()=>el.remove(), 1600);
     }
   }
   function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'), 2200);
+    const t = document.getElementById('toast'); t.textContent = msg;
+    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000);
   }
   window.showToast = showToast;
-
   init();
 </script>
 </body>
