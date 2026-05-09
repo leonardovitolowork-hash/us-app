@@ -443,15 +443,67 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,onValue,push,remove,update,set}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getDatabase,ref,onValue,push,remove,update,set,get}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getMessaging,getToken,onMessage}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
 const cfg={apiKey:"AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",authDomain:"to-do-58ecc.firebaseapp.com",databaseURL:"https://to-do-58ecc-default-rtdb.europe-west1.firebasedatabase.app",projectId:"to-do-58ecc",storageBucket:"to-do-58ecc.firebasestorage.app",messagingSenderId:"600846617101",appId:"1:600846617101:web:97a51c8e6de97c83e02e0c"};
 const app=initializeApp(cfg),db=getDatabase(app),auth=getAuth(app),prov=new GoogleAuthProvider();
 const ALLOWED=['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
+
+// ── FCM setup ──
+const FCM_VAPID = 'REPLACE_WITH_YOUR_FCM_WEB_PUSH_CERTIFICATE_KEY';
+const FCM_SERVER_KEY = 'REPLACE_WITH_YOUR_FCM_SERVER_KEY';
+let messaging = null;
+try { messaging = getMessaging(app); } catch(e) { console.warn('FCM not available', e); }
+
+async function setupPush(identity) {
+  if (!messaging) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { console.log('Notifications denied'); return; }
+    const swReg = await navigator.serviceWorker.ready;
+    const token = await getToken(messaging, { vapidKey: FCM_VAPID, serviceWorkerRegistration: swReg });
+    if (token) {
+      await set(ref(db, 'fcmTokens/' + identity), token);
+      console.log('FCM token saved for', identity);
+    }
+  } catch(e) { console.warn('Push setup failed', e); }
+}
+
+async function sendFCMNudge(senderIdentity) {
+  const receiver = senderIdentity === 'Leo' ? 'Mimi' : 'Leo';
+  const emoji    = senderIdentity === 'Leo' ? '💙' : '🌸';
+  const snap = await get(ref(db, 'fcmTokens/' + receiver));
+  if (!snap.exists()) { console.log('No FCM token for', receiver); return; }
+  const token = snap.val();
+  const payload = {
+    to: token,
+    notification: {
+      title: emoji + ' ' + senderIdentity + ' is thinking of you!',
+      body: 'Open the app to send a nudge back 💕',
+      icon: 'https://leonardovitolowork-hash.github.io/us-app/icon-192.png',
+      badge: 'https://leonardovitolowork-hash.github.io/us-app/icon-192.png'
+    }
+  };
+  try {
+    await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=' + FCM_SERVER_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) { console.warn('FCM send failed', e); }
+}
+
 window.DB=db;window.REF=ref;window.PUSH=push;window.REMOVE=remove;window.UPDATE=update;window.SET=set;
 window.TASKS_REF=ref(db,'tasks');
+window.sendFCMNudge=sendFCMNudge;
 window.signInWithGoogle=async()=>{document.getElementById('signInBtn').style.display='none';document.getElementById('lloading').style.display='block';try{await signInWithPopup(auth,prov);}catch(e){document.getElementById('lloading').style.display='none';document.getElementById('signInBtn').style.display='flex';window.showToast('Error: '+(e.code||e.message));}};
 window.doSignOut=async()=>{closeMenu();await signOut(auth);};
+
 onAuthStateChanged(auth,user=>{
   const ls=document.getElementById('loginScreen'),bs=document.getElementById('blockedScreen'),ap=document.getElementById('app');
   if(!user){document.getElementById('lloading').style.display='none';document.getElementById('signInBtn').style.display='flex';ls.style.display='flex';bs.style.display='none';ap.style.display='none';return;}
@@ -462,7 +514,10 @@ onAuthStateChanged(auth,user=>{
   if(user.photoURL){aw.innerHTML='<div class="avatar-btn" onclick="openMenu()"><img src="'+user.photoURL+'"/></div>';maw.innerHTML='<img class="menu-avatar" src="'+user.photoURL+'">';}else{const i=(user.displayName||user.email||'?')[0].toUpperCase();aw.innerHTML='<div class="avatar-ph" onclick="openMenu()">'+i+'</div>';maw.innerHTML='<div class="avatar-ph" style="width:52px;height:52px;font-size:20px">'+i+'</div>';}
   document.getElementById('menuName').textContent=user.displayName||'You';
   document.getElementById('menuEmail').textContent=user.email;
-  window.setIdentity(email===ALLOWED[0].toLowerCase()?'Leo':'Mimi',true);
+  const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
+  window.setIdentity(myIdentity,true);
+  // Setup push notifications for this device
+  setTimeout(()=>setupPush(myIdentity), 1500);
   onValue(ref(db,'.info/connected'),s=>{const live=s.val();document.getElementById('syncDot').className='sync-dot '+(live?'live':'err');document.getElementById('syncLbl').textContent=live?'Live':'Away';});
   onValue(ref(db,'tasks'),s=>{window._tasks={};if(s.exists())s.forEach(c=>{window._tasks[c.key]=c.val();});renderTasks();updateStats();});
   onValue(ref(db,'notes/shared'),s=>{const el=document.getElementById('sharedNote');if(!window._editingShared&&s.exists())el.value=s.val();});
@@ -533,7 +588,15 @@ function updateStreak(){const today=new Date().toDateString(),last=localStorage.
 function setMood(emoji){if(!identity)return;SET(REF(DB,'moods/'+identity),{emoji,ts:Date.now()});}
 function renderMoods(data){const lm=data.Leo,mm=data.Mimi;let parts=[];if(lm)parts.push('💙 Leo: '+lm.emoji+' '+(MOODS[lm.emoji]||''));if(mm)parts.push('🌸 Mimi: '+mm.emoji+' '+(MOODS[mm.emoji]||''));document.getElementById('moodDisplay').textContent=parts.length?parts.join('  ·  '):'No moods set yet today';document.querySelectorAll('.mood-btn').forEach(b=>{const emo=b.getAttribute('onclick').match(/'([^']+)'/)[1];const myM=data[identity];const today=new Date().toDateString();b.classList.toggle('sel',!!(myM&&myM.emoji===emo&&new Date(myM.ts).toDateString()===today));});}
 window.setMood=setMood;
-function sendNudge(){if(!identity)return;SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});const s=document.getElementById('nudgeSent');s.style.display='block';setTimeout(()=>s.style.display='none',3000);}
+function sendNudge(){
+  if(!identity)return;
+  SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});
+  // Fire FCM push to the other person
+  if(window.sendFCMNudge) window.sendFCMNudge(identity);
+  const s=document.getElementById('nudgeSent');
+  s.style.display='block';
+  setTimeout(()=>s.style.display='none',3000);
+}
 window.sendNudge=sendNudge;
 function addMilestone(){const name=document.getElementById('msName').value.trim(),date=document.getElementById('msDate').value;if(!name||!date)return;PUSH(REF(DB,'milestones'),{name,date});document.getElementById('msName').value='';document.getElementById('msDate').value='';}
 window.addMilestone=addMilestone;

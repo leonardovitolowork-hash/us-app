@@ -1,4 +1,4 @@
-const CACHE = 'us-app-v3';
+const CACHE = 'us-app-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -30,9 +30,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (
     e.request.url.includes('firebaseio.com') ||
-    e.request.url.includes('googleapis.com/identitytoolkit') ||
+    e.request.url.includes('googleapis.com') ||
     e.request.url.includes('securetoken.google') ||
-    e.request.url.includes('firebaseapp.com/__/auth')
+    e.request.url.includes('firebaseapp.com')
   ) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
@@ -41,8 +41,8 @@ self.addEventListener('fetch', e => {
 
 // ===== PUSH NOTIFICATIONS =====
 self.addEventListener('push', e => {
-  let data = { title: 'Us ♥', body: 'You have a new nudge! 💕', icon: './icon-192.png', badge: './icon-192.png' };
-  try { data = { ...data, ...e.data.json() }; } catch {}
+  let data = { title: 'Us ♥', body: 'Someone is thinking of you! 💕', icon: './icon-192.png', badge: './icon-192.png' };
+  try { if (e.data) data = { ...data, ...e.data.json() }; } catch {}
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
