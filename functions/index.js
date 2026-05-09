@@ -4,11 +4,8 @@ const webpush = require('web-push');
 
 admin.initializeApp();
 
-// ====================================================
-// PASTE YOUR VAPID KEYS HERE (see setup instructions)
-// ====================================================
-const VAPID_PUBLIC  = 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY';
-const VAPID_PRIVATE = 'REPLACE_WITH_YOUR_VAPID_PRIVATE_KEY';
+const VAPID_PUBLIC  = 'BHkKY58uW_N_SIds8DV3zwOPeCQjBN4TTLpbIgvdBk9RwBn-2dr3Ttir8MQCE4cxWuj48xriPPENFlq9W5XZL1I';
+const VAPID_PRIVATE = '35H-kBAeFfHcCAXbr_FFEkWOXhubMO2u8oWo71_zDkY';
 const VAPID_EMAIL   = 'mailto:leonardovitolowork@gmail.com';
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -19,14 +16,13 @@ exports.sendNudge = onValueWritten(
     const nudge = event.data.after.val();
     if (!nudge || !nudge.from || !nudge.ts) return null;
 
-    const sender   = nudge.from;                          // 'Leo' or 'Mimi'
-    const receiver = sender === 'Leo' ? 'Mimi' : 'Leo';  // the other person
+    const sender   = nudge.from;
+    const receiver = sender === 'Leo' ? 'Mimi' : 'Leo';
     const emoji    = sender === 'Leo' ? '💙' : '🌸';
 
     const title = `${emoji} ${sender} is thinking of you!`;
     const body  = `Open the app to send a nudge back 💕`;
 
-    // Load the receiver's push subscription from Firebase
     const db = admin.database();
     const snap = await db.ref(`pushTokens/${receiver}`).get();
     if (!snap.exists()) {
@@ -42,7 +38,6 @@ exports.sendNudge = onValueWritten(
       console.log(`Nudge sent from ${sender} to ${receiver}`);
     } catch (err) {
       console.error('Push failed:', err);
-      // Clean up expired subscription
       if (err.statusCode === 410) {
         await db.ref(`pushTokens/${receiver}`).remove();
       }
