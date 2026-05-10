@@ -17,7 +17,7 @@ async function sendPush(subSnap, payload) {
   if (!sub || !sub.endpoint) return;
   try {
     await webpush.sendNotification(sub, JSON.stringify(payload));
-    console.log('Push sent to', sub.endpoint.slice(-20));
+    console.log('Push sent!');
   } catch (err) {
     console.warn('Push failed:', err.statusCode, err.message);
     if (err.statusCode === 404 || err.statusCode === 410) {
