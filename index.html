@@ -4,22 +4,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>Us ♥</title>
-
-<!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json"/>
-
-<!-- Theme -->
 <meta name="theme-color" content="#7c3aed"/>
-
-<!-- iOS PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Us"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
-
-<!-- Fallback iOS splash (optional, blank for now) -->
 <meta name="mobile-web-app-capable" content="yes"/>
-
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
@@ -93,6 +84,13 @@ body{background:var(--bg);color:var(--text);transition:background .3s,color .3s}
 .page{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 20px;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .22s ease,transform .22s ease}
 .page.active{opacity:1;pointer-events:all;transform:translateY(0)}
 .page::-webkit-scrollbar{display:none}
+/* Push banner */
+#pushBanner{display:none;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(219,39,119,.08));border:1.5px solid rgba(124,58,237,.2);border-radius:var(--radius-sm);margin:0 16px 12px;cursor:pointer;transition:all .2s}
+#pushBanner:active{transform:scale(.98)}
+#pushBanner .pb-ico{font-size:22px;flex-shrink:0}
+#pushBanner .pb-text{flex:1;font-size:13px;font-weight:600;color:var(--text);line-height:1.4}
+#pushBanner .pb-text small{display:block;font-size:11px;color:var(--text2);font-weight:500;margin-top:1px}
+#pushBanner .pb-cta{font-size:12px;font-weight:800;color:var(--accent);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
 .add-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border)}
 .add-main{display:flex;gap:8px;margin-bottom:12px}
 .task-input{flex:1;padding:13px 16px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:15px;font-weight:500;outline:none;transition:border .2s,box-shadow .2s;font-family:inherit}
@@ -294,6 +292,13 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
     </div>
   </div>
 
+  <!-- Push notification banner — shown until permission granted -->
+  <div id="pushBanner" onclick="bannerRequestPush()">
+    <span class="pb-ico">🔔</span>
+    <span class="pb-text">Enable nudge notifications<small>Tap to allow — so you never miss a 💖</small></span>
+    <span class="pb-cta">Enable →</span>
+  </div>
+
   <div class="pages">
     <div class="page active" id="page-tasks">
       <div class="add-card">
@@ -441,27 +446,36 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
   <button class="menu-signout" onclick="doSignOut()">Sign out</button>
 </div>
 
-<!-- Service Worker Registration — must run BEFORE firebase module so SW is ready -->
+<!-- SW registered early so it's ready when push is requested -->
 <script>
-window._swReady = new Promise((resolve, reject) => {
+window._swReady = new Promise(resolve => {
   if (!('serviceWorker' in navigator)) { resolve(null); return; }
   navigator.serviceWorker.register('./sw.js')
     .then(reg => {
-      console.log('SW registered', reg.scope);
-      // If already active, resolve immediately
       if (reg.active) { resolve(reg); return; }
-      // Otherwise wait for it to become active
       const sw = reg.installing || reg.waiting;
-      if (sw) {
-        sw.addEventListener('statechange', function() {
-          if (this.state === 'activated') resolve(reg);
-        });
-      } else {
-        navigator.serviceWorker.ready.then(resolve);
-      }
+      if (sw) { sw.addEventListener('statechange', function(){ if(this.state==='activated') resolve(reg); }); }
+      else { navigator.serviceWorker.ready.then(resolve); }
     })
-    .catch(e => { console.warn('SW failed', e); resolve(null); });
+    .catch(() => resolve(null));
 });
+
+// Called directly from user tap on the banner
+window.bannerRequestPush = async function() {
+  if (!('PushManager' in window)) { return; }
+  const identity = localStorage.getItem('us_id');
+  if (!identity) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { window.showToast('Notifications blocked 😔'); return; }
+    const VAPID = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: VAPID });
+    await window.SET(window.REF(window.DB, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
+    document.getElementById('pushBanner').style.display = 'none';
+    window.showToast('Notifications enabled! 🔔✨');
+  } catch(e) { console.warn('Push failed', e); window.showToast('Could not enable notifications'); }
+};
 </script>
 
 <script type="module">
@@ -472,32 +486,6 @@ import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}fro
 const cfg={apiKey:"AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",authDomain:"to-do-58ecc.firebaseapp.com",databaseURL:"https://to-do-58ecc-default-rtdb.europe-west1.firebasedatabase.app",projectId:"to-do-58ecc",storageBucket:"to-do-58ecc.firebasestorage.app",messagingSenderId:"600846617101",appId:"1:600846617101:web:97a51c8e6de97c83e02e0c"};
 const app=initializeApp(cfg),db=getDatabase(app),auth=getAuth(app),prov=new GoogleAuthProvider();
 const ALLOWED=['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
-
-// ── Native Web Push ──
-const VAPID_PUBLIC = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
-
-async function setupPush(identity) {
-  if (!('PushManager' in window)) { console.log('Push not supported'); return; }
-  try {
-    // Wait for SW to be ready using our pre-registered promise
-    const swReg = await window._swReady;
-    if (!swReg) { console.log('No SW registration'); return; }
-
-    // Request permission — this shows the browser prompt
-    const perm = await Notification.requestPermission();
-    console.log('Notification permission:', perm);
-    if (perm !== 'granted') { console.log('Notifications denied'); return; }
-
-    // Use navigator.serviceWorker.ready to get the active registration
-    const readyReg = await navigator.serviceWorker.ready;
-    const sub = await readyReg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: VAPID_PUBLIC
-    });
-    await set(ref(db, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
-    console.log('Push subscription saved for', identity);
-  } catch(e) { console.warn('Push setup failed', e); }
-}
 
 window.DB=db;window.REF=ref;window.PUSH=push;window.REMOVE=remove;window.UPDATE=update;window.SET=set;
 window.TASKS_REF=ref(db,'tasks');
@@ -516,8 +504,10 @@ onAuthStateChanged(auth,user=>{
   document.getElementById('menuEmail').textContent=user.email;
   const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
   window.setIdentity(myIdentity,true);
-  // Give the UI a moment to render, then request push permission
-  setTimeout(()=>setupPush(myIdentity), 2000);
+  // Show push banner only if permission not yet granted
+  if('Notification' in window && Notification.permission === 'default' && 'PushManager' in window) {
+    document.getElementById('pushBanner').style.display = 'flex';
+  }
   onValue(ref(db,'.info/connected'),s=>{const live=s.val();document.getElementById('syncDot').className='sync-dot '+(live?'live':'err');document.getElementById('syncLbl').textContent=live?'Live':'Away';});
   onValue(ref(db,'tasks'),s=>{window._tasks={};if(s.exists())s.forEach(c=>{window._tasks[c.key]=c.val();});renderTasks();updateStats();});
   onValue(ref(db,'notes/shared'),s=>{const el=document.getElementById('sharedNote');if(!window._editingShared&&s.exists())el.value=s.val();});
