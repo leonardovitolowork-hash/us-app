@@ -6,7 +6,6 @@ admin.initializeApp();
 const db = admin.database();
 
 const VAPID_PUBLIC  = 'BH2ScZoN00qrKzq9dfoI5hey7FEiqf7OKeroOYcKIkWAUfSByh9YTDnPPV9OatgwtYD7IZKj1u6lDZzv2hwSyqI';
-// Read private key from environment variable (set via GitHub Actions secret)
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL   = 'mailto:leonardovitolowork@gmail.com';
 
