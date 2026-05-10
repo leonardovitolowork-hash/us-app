@@ -6,7 +6,8 @@ admin.initializeApp();
 const db = admin.database();
 
 const VAPID_PUBLIC  = 'BH2ScZoN00qrKzq9dfoI5hey7FEiqf7OKeroOYcKIkWAUfSByh9YTDnPPV9OatgwtYD7IZKj1u6lDZzv2hwSyqI';
-const VAPID_PRIVATE = functions.config().vapid.private_key;
+// Read private key from environment variable (set via GitHub Actions secret)
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL   = 'mailto:leonardovitolowork@gmail.com';
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -26,7 +27,6 @@ async function sendPush(subSnap, payload) {
   }
 }
 
-// Trigger: nudge written
 exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
   const nudge = change.after.val();
   if (!nudge || !nudge.from || !nudge.ts) return null;
@@ -44,7 +44,6 @@ exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
   return null;
 });
 
-// Trigger: new task created
 exports.onNewTask = functions.database.ref('/tasks/{taskId}').onCreate(async (snap) => {
   const task = snap.val();
   if (!task || !task.addedBy || !task.text) return null;
