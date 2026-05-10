@@ -16,13 +16,15 @@ if (!VAPID_PRIVATE) {
   webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
 }
 
+const EUfunctions = functions.region('europe-west1');
+
 async function sendPush(subSnap, payload) {
   if (!subSnap.exists()) return;
   const sub = subSnap.val();
   if (!sub || !sub.endpoint) return;
   try {
     await webpush.sendNotification(sub, JSON.stringify(payload));
-    console.log('Push sent! v8');
+    console.log('Push sent! v9');
   } catch (err) {
     console.warn('Push failed:', err.statusCode, err.message);
     if (err.statusCode === 404 || err.statusCode === 410) {
@@ -31,7 +33,7 @@ async function sendPush(subSnap, payload) {
   }
 }
 
-exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
+exports.onNudge = EUfunctions.database.ref('/nudge').onWrite(async (change) => {
   const nudge = change.after.val();
   if (!nudge || !nudge.from || !nudge.ts) return null;
   const target = nudge.from === 'Leo' ? 'Mimi' : 'Leo';
@@ -48,7 +50,7 @@ exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
   return null;
 });
 
-exports.onNewTask = functions.database.ref('/tasks/{taskId}').onCreate(async (snap) => {
+exports.onNewTask = EUfunctions.database.ref('/tasks/{taskId}').onCreate(async (snap) => {
   const task = snap.val();
   if (!task || !task.addedBy || !task.text) return null;
   const target = task.addedBy === 'Leo' ? 'Mimi' : 'Leo';
