@@ -26,6 +26,7 @@ async function sendPush(subSnap, payload) {
   }
 }
 
+// Trigger: nudge written
 exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
   const nudge = change.after.val();
   if (!nudge || !nudge.from || !nudge.ts) return null;
@@ -43,6 +44,7 @@ exports.onNudge = functions.database.ref('/nudge').onWrite(async (change) => {
   return null;
 });
 
+// Trigger: new task created
 exports.onNewTask = functions.database.ref('/tasks/{taskId}').onCreate(async (snap) => {
   const task = snap.val();
   if (!task || !task.addedBy || !task.text) return null;
