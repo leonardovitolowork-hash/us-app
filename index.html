@@ -441,6 +441,29 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
   <button class="menu-signout" onclick="doSignOut()">Sign out</button>
 </div>
 
+<!-- Service Worker Registration — must run BEFORE firebase module so SW is ready -->
+<script>
+window._swReady = new Promise((resolve, reject) => {
+  if (!('serviceWorker' in navigator)) { resolve(null); return; }
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => {
+      console.log('SW registered', reg.scope);
+      // If already active, resolve immediately
+      if (reg.active) { resolve(reg); return; }
+      // Otherwise wait for it to become active
+      const sw = reg.installing || reg.waiting;
+      if (sw) {
+        sw.addEventListener('statechange', function() {
+          if (this.state === 'activated') resolve(reg);
+        });
+      } else {
+        navigator.serviceWorker.ready.then(resolve);
+      }
+    })
+    .catch(e => { console.warn('SW failed', e); resolve(null); });
+});
+</script>
+
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,onValue,push,remove,update,set,get}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -450,16 +473,24 @@ const cfg={apiKey:"AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",authDomain:"to-do-58
 const app=initializeApp(cfg),db=getDatabase(app),auth=getAuth(app),prov=new GoogleAuthProvider();
 const ALLOWED=['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
 
-// ── Native Web Push (aligned with functions/index.js web-push + VAPID) ──
+// ── Native Web Push ──
 const VAPID_PUBLIC = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
 
 async function setupPush(identity) {
   if (!('PushManager' in window)) { console.log('Push not supported'); return; }
   try {
+    // Wait for SW to be ready using our pre-registered promise
+    const swReg = await window._swReady;
+    if (!swReg) { console.log('No SW registration'); return; }
+
+    // Request permission — this shows the browser prompt
     const perm = await Notification.requestPermission();
+    console.log('Notification permission:', perm);
     if (perm !== 'granted') { console.log('Notifications denied'); return; }
-    const swReg = await navigator.serviceWorker.ready;
-    const sub = await swReg.pushManager.subscribe({
+
+    // Use navigator.serviceWorker.ready to get the active registration
+    const readyReg = await navigator.serviceWorker.ready;
+    const sub = await readyReg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: VAPID_PUBLIC
     });
@@ -485,7 +516,8 @@ onAuthStateChanged(auth,user=>{
   document.getElementById('menuEmail').textContent=user.email;
   const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
   window.setIdentity(myIdentity,true);
-  setTimeout(()=>setupPush(myIdentity), 1500);
+  // Give the UI a moment to render, then request push permission
+  setTimeout(()=>setupPush(myIdentity), 2000);
   onValue(ref(db,'.info/connected'),s=>{const live=s.val();document.getElementById('syncDot').className='sync-dot '+(live?'live':'err');document.getElementById('syncLbl').textContent=live?'Live':'Away';});
   onValue(ref(db,'tasks'),s=>{window._tasks={};if(s.exists())s.forEach(c=>{window._tasks[c.key]=c.val();});renderTasks();updateStats();});
   onValue(ref(db,'notes/shared'),s=>{const el=document.getElementById('sharedNote');if(!window._editingShared&&s.exists())el.value=s.val();});
@@ -573,17 +605,6 @@ function fireConfetti(){const c=document.getElementById('cconf'),cols=['#7c3aed'
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 window.showToast=showToast;
 init();
-</script>
-
-<!-- Service Worker Registration -->
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js')
-      .then(r=>console.log('SW registered',r.scope))
-      .catch(e=>console.warn('SW failed',e));
-  });
-}
 </script>
 </body>
 </html>
