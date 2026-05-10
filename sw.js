@@ -1,4 +1,4 @@
-const CACHE = 'us-app-v4';
+const CACHE = 'us-app-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -51,24 +51,24 @@ self.addEventListener('push', e => {
       vibrate: [200, 100, 200, 100, 200],
       tag: 'nudge',
       renotify: true,
-      data: { url: self.location.origin + '/us-app/' }
+      data: { url: 'https://leonardovitolowork-hash.github.io/us-app/' }
     })
   );
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || 'https://leonardovitolowork-hash.github.io/us-app/';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
         if (c.url.includes('us-app') && 'focus' in c) return c.focus();
       }
-      return clients.openWindow(e.notification.data?.url || '/');
+      return clients.openWindow(target);
     })
   );
 });
 
-// Handle push subscription from main thread
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });

@@ -84,7 +84,6 @@ body{background:var(--bg);color:var(--text);transition:background .3s,color .3s}
 .page{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 20px;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .22s ease,transform .22s ease}
 .page.active{opacity:1;pointer-events:all;transform:translateY(0)}
 .page::-webkit-scrollbar{display:none}
-/* Push banner */
 #pushBanner{display:none;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(219,39,119,.08));border:1.5px solid rgba(124,58,237,.2);border-radius:var(--radius-sm);margin:0 16px 12px;cursor:pointer;transition:all .2s}
 #pushBanner:active{transform:scale(.98)}
 #pushBanner .pb-ico{font-size:22px;flex-shrink:0}
@@ -292,7 +291,6 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
     </div>
   </div>
 
-  <!-- Push notification banner -->
   <div id="pushBanner" onclick="bannerRequestPush()">
     <span class="pb-ico">🔔</span>
     <span class="pb-text">Enable nudge notifications<small>Tap to allow — so you never miss a 💖</small></span>
@@ -446,65 +444,97 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
   <button class="menu-signout" onclick="doSignOut()">Sign out</button>
 </div>
 
+<!-- PUSH LOGIC -->
 <script>
-// The CORRECT VAPID public key — must match the server (functions/index.js)
 const VAPID_PUBLIC_KEY = 'BH2ScZoN00qrKzq9dfoI5hey7FEiqf7OKeroOYcKIkWAUfSByh9YTDnPPV9OatgwtYD7IZKj1u6lDZzv2hwSyqI';
 
-function urlB64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+function urlB64ToUint8Array(b) {
+  const pad = '='.repeat((4 - b.length % 4) % 4);
+  const base64 = (b + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
-window._swReady = new Promise(resolve => {
-  if (!('serviceWorker' in navigator)) { resolve(null); return; }
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg => {
-      if (reg.active) { resolve(reg); return; }
-      const sw = reg.installing || reg.waiting;
-      if (sw) { sw.addEventListener('statechange', function(){ if(this.state==='activated') resolve(reg); }); }
-      else { navigator.serviceWorker.ready.then(resolve); }
-    })
-    .catch(() => resolve(null));
-});
+// Register SW immediately on page load
+window._swReg = null;
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    window._swReg = reg;
+    console.log('[SW] registered', reg.scope);
+  }).catch(e => console.error('[SW] register failed', e));
+}
 
+// Called when banner is tapped — MUST be inside a direct user gesture
 window.bannerRequestPush = async function() {
   if (!('PushManager' in window)) {
-    window.showToast('Push not supported on this device');
-    return;
+    showToast('Push not supported on this device 😔'); return;
   }
   const identity = localStorage.getItem('us_id');
-  if (!identity) { window.showToast('Pick Leo or Mimi first'); return; }
-  try {
-    // 1. Request permission — must be inside a user gesture
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { window.showToast('Notifications blocked 😔'); return; }
+  if (!identity) { showToast('Pick Leo or Mimi first 👆'); return; }
 
-    // 2. Wait for SW to be ready
+  try {
+    // Step 1: request permission (must be in user gesture)
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showToast('Notifications blocked 😔'); return; }
+
+    // Step 2: make sure SW is ready
     const reg = await navigator.serviceWorker.ready;
 
-    // 3. Always unsubscribe old subscription first (clears any stale/wrong-key sub)
-    const oldSub = await reg.pushManager.getSubscription();
-    if (oldSub) await oldSub.unsubscribe();
+    // Step 3: always nuke the old subscription (stale key = silent failure)
+    const old = await reg.pushManager.getSubscription();
+    if (old) { await old.unsubscribe(); console.log('[Push] old sub removed'); }
 
-    // 4. Create fresh subscription with the correct VAPID key
+    // Step 4: fresh subscription with correct VAPID key
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
     });
+    console.log('[Push] subscribed', sub.endpoint);
 
-    // 5. Save subscription to Firebase
+    // Step 5: save to Firebase so server can reach this device
     await window.SET(window.REF(window.DB, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
+
     document.getElementById('pushBanner').style.display = 'none';
-    window.showToast('Notifications enabled! 🔔✨');
+    showToast('🔔 Notifications enabled!');
   } catch(e) {
-    console.error('Push subscribe error:', e.name, e.message);
-    window.showToast('Error: ' + (e.message || e.name));
+    console.error('[Push] error', e.name, e.message);
+    showToast('Push error: ' + (e.message || e.name));
+  }
+};
+
+// After login, decide whether to show the banner.
+// Show it if: push supported AND (permission default OR granted-but-needs-refresh)
+window._checkPushBanner = async function() {
+  if (!('PushManager' in window) || !('Notification' in window)) return;
+  const perm = Notification.permission;
+  if (perm === 'denied') return; // user explicitly blocked, respect that
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    const identity = localStorage.getItem('us_id');
+
+    if (!sub) {
+      // No subscription at all -> show banner
+      document.getElementById('pushBanner').style.display = 'flex';
+      return;
+    }
+
+    // Subscription exists — check if it's saved in Firebase for this identity
+    if (identity && window.DB) {
+      const snap = await window.GET(window.REF(window.DB, 'pushTokens/' + identity));
+      if (!snap.exists()) {
+        // Sub exists locally but not saved remotely -> show banner to re-register
+        document.getElementById('pushBanner').style.display = 'flex';
+      }
+    }
+  } catch(e) {
+    console.warn('[Push] banner check failed', e);
   }
 };
 </script>
 
+<!-- FIREBASE + APP LOGIC -->
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,onValue,push,remove,update,set,get}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -514,7 +544,7 @@ const cfg={apiKey:"AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",authDomain:"to-do-58
 const app=initializeApp(cfg),db=getDatabase(app),auth=getAuth(app),prov=new GoogleAuthProvider();
 const ALLOWED=['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
 
-window.DB=db;window.REF=ref;window.PUSH=push;window.REMOVE=remove;window.UPDATE=update;window.SET=set;
+window.DB=db;window.REF=ref;window.PUSH=push;window.REMOVE=remove;window.UPDATE=update;window.SET=set;window.GET=get;
 window.TASKS_REF=ref(db,'tasks');
 window.signInWithGoogle=async()=>{document.getElementById('signInBtn').style.display='none';document.getElementById('lloading').style.display='block';try{await signInWithPopup(auth,prov);}catch(e){document.getElementById('lloading').style.display='none';document.getElementById('signInBtn').style.display='flex';window.showToast('Error: '+(e.code||e.message));}};
 window.doSignOut=async()=>{closeMenu();await signOut(auth);};
@@ -531,9 +561,8 @@ onAuthStateChanged(auth,user=>{
   document.getElementById('menuEmail').textContent=user.email;
   const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
   window.setIdentity(myIdentity,true);
-  if('Notification' in window && Notification.permission === 'default' && 'PushManager' in window) {
-    document.getElementById('pushBanner').style.display = 'flex';
-  }
+  // Check push banner AFTER identity & DB are ready
+  setTimeout(()=>window._checkPushBanner(),800);
   onValue(ref(db,'.info/connected'),s=>{const live=s.val();document.getElementById('syncDot').className='sync-dot '+(live?'live':'err');document.getElementById('syncLbl').textContent=live?'Live':'Away';});
   onValue(ref(db,'tasks'),s=>{window._tasks={};if(s.exists())s.forEach(c=>{window._tasks[c.key]=c.val();});renderTasks();updateStats();});
   onValue(ref(db,'notes/shared'),s=>{const el=document.getElementById('sharedNote');if(!window._editingShared&&s.exists())el.value=s.val();});
@@ -545,6 +574,7 @@ onAuthStateChanged(auth,user=>{
   updateStreak();
 });
 </script>
+
 <script>
 let identity=localStorage.getItem('us_id')||null;
 let selColor='purple',urgOn=false,activeFilter='all',compOpen=false;
@@ -604,13 +634,7 @@ function updateStreak(){const today=new Date().toDateString(),last=localStorage.
 function setMood(emoji){if(!identity)return;SET(REF(DB,'moods/'+identity),{emoji,ts:Date.now()});}
 function renderMoods(data){const lm=data.Leo,mm=data.Mimi;let parts=[];if(lm)parts.push('💙 Leo: '+lm.emoji+' '+(MOODS[lm.emoji]||''));if(mm)parts.push('🌸 Mimi: '+mm.emoji+' '+(MOODS[mm.emoji]||''));document.getElementById('moodDisplay').textContent=parts.length?parts.join('  ·  '):'No moods set yet today';document.querySelectorAll('.mood-btn').forEach(b=>{const emo=b.getAttribute('onclick').match(/'([^']+)'/)[1];const myM=data[identity];const today=new Date().toDateString();b.classList.toggle('sel',!!(myM&&myM.emoji===emo&&new Date(myM.ts).toDateString()===today));});}
 window.setMood=setMood;
-function sendNudge(){
-  if(!identity)return;
-  SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});
-  const s=document.getElementById('nudgeSent');
-  s.style.display='block';
-  setTimeout(()=>s.style.display='none',3000);
-}
+function sendNudge(){if(!identity)return;SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});const s=document.getElementById('nudgeSent');s.style.display='block';setTimeout(()=>s.style.display='none',3000);}
 window.sendNudge=sendNudge;
 function addMilestone(){const name=document.getElementById('msName').value.trim(),date=document.getElementById('msDate').value;if(!name||!date)return;PUSH(REF(DB,'milestones'),{name,date});document.getElementById('msName').value='';document.getElementById('msDate').value='';}
 window.addMilestone=addMilestone;
