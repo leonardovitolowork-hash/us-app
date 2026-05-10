@@ -292,7 +292,7 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
     </div>
   </div>
 
-  <!-- Push notification banner — shown until permission granted -->
+  <!-- Push notification banner -->
   <div id="pushBanner" onclick="bannerRequestPush()">
     <span class="pb-ico">🔔</span>
     <span class="pb-text">Enable nudge notifications<small>Tap to allow — so you never miss a 💖</small></span>
@@ -446,8 +446,15 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
   <button class="menu-signout" onclick="doSignOut()">Sign out</button>
 </div>
 
-<!-- SW registered early so it's ready when push is requested -->
 <script>
+// Helper: convert VAPID base64 string to Uint8Array (required by iOS)
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
 window._swReady = new Promise(resolve => {
   if (!('serviceWorker' in navigator)) { resolve(null); return; }
   navigator.serviceWorker.register('./sw.js')
@@ -460,21 +467,40 @@ window._swReady = new Promise(resolve => {
     .catch(() => resolve(null));
 });
 
-// Called directly from user tap on the banner
 window.bannerRequestPush = async function() {
-  if (!('PushManager' in window)) { return; }
+  if (!('PushManager' in window)) {
+    window.showToast('Push not supported on this device');
+    return;
+  }
   const identity = localStorage.getItem('us_id');
-  if (!identity) return;
+  if (!identity) { window.showToast('Pick Leo or Mimi first'); return; }
   try {
+    // 1. Request permission — must be inside a user gesture
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { window.showToast('Notifications blocked 😔'); return; }
-    const VAPID = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
+
+    // 2. Wait for SW to be ready
     const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: VAPID });
+
+    // 3. Check for existing subscription first
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const VAPID = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
+      // Convert VAPID key to Uint8Array — required format for iOS
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID)
+      });
+    }
+
+    // 4. Save subscription to Firebase
     await window.SET(window.REF(window.DB, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
     document.getElementById('pushBanner').style.display = 'none';
     window.showToast('Notifications enabled! 🔔✨');
-  } catch(e) { console.warn('Push failed', e); window.showToast('Could not enable notifications'); }
+  } catch(e) {
+    console.error('Push subscribe error:', e.name, e.message);
+    window.showToast('Error: ' + (e.message || e.name));
+  }
 };
 </script>
 
@@ -504,7 +530,6 @@ onAuthStateChanged(auth,user=>{
   document.getElementById('menuEmail').textContent=user.email;
   const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
   window.setIdentity(myIdentity,true);
-  // Show push banner only if permission not yet granted
   if('Notification' in window && Notification.permission === 'default' && 'PushManager' in window) {
     document.getElementById('pushBanner').style.display = 'flex';
   }
