@@ -22,7 +22,7 @@ async function sendPush(subSnap, payload) {
   if (!sub || !sub.endpoint) return;
   try {
     await webpush.sendNotification(sub, JSON.stringify(payload));
-    console.log('Push sent! v7');
+    console.log('Push sent! v8');
   } catch (err) {
     console.warn('Push failed:', err.statusCode, err.message);
     if (err.statusCode === 404 || err.statusCode === 410) {
