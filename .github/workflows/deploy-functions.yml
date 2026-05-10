@@ -26,10 +26,12 @@ jobs:
       - name: Install function dependencies
         run: cd functions && npm install
 
+      - name: Write .env file for functions
+        run: echo "VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}" > functions/.env
+
       - name: Deploy functions
         run: |
           echo '${{ secrets.FIREBASE_SA_KEY }}' > /tmp/sa-key.json
           npx firebase-tools deploy --only functions --project to-do-58ecc --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa-key.json
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}

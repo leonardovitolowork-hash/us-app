@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const webpush = require('web-push');
+require('dotenv').config();
 
 admin.initializeApp();
 const db = admin.database();
@@ -9,7 +10,11 @@ const VAPID_PUBLIC  = 'BH2ScZoN00qrKzq9dfoI5hey7FEiqf7OKeroOYcKIkWAUfSByh9YTDnPP
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL   = 'mailto:leonardovitolowork@gmail.com';
 
-webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+if (!VAPID_PRIVATE) {
+  console.error('VAPID_PRIVATE_KEY is not set!');
+} else {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+}
 
 async function sendPush(subSnap, payload) {
   if (!subSnap.exists()) return;
@@ -17,7 +22,7 @@ async function sendPush(subSnap, payload) {
   if (!sub || !sub.endpoint) return;
   try {
     await webpush.sendNotification(sub, JSON.stringify(payload));
-    console.log('Push sent! v6');
+    console.log('Push sent! v7');
   } catch (err) {
     console.warn('Push failed:', err.statusCode, err.message);
     if (err.statusCode === 404 || err.statusCode === 410) {
