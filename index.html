@@ -445,62 +445,31 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,onValue,push,remove,update,set,get}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import{getMessaging,getToken,onMessage}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const cfg={apiKey:"AIzaSyDH8da5weYNRKPYbNZiqQtVTgkGbPkRvLo",authDomain:"to-do-58ecc.firebaseapp.com",databaseURL:"https://to-do-58ecc-default-rtdb.europe-west1.firebasedatabase.app",projectId:"to-do-58ecc",storageBucket:"to-do-58ecc.firebasestorage.app",messagingSenderId:"600846617101",appId:"1:600846617101:web:97a51c8e6de97c83e02e0c"};
 const app=initializeApp(cfg),db=getDatabase(app),auth=getAuth(app),prov=new GoogleAuthProvider();
 const ALLOWED=['leonardovitolowork@gmail.com','demifotaki125@gmail.com'];
 
-// ── FCM setup ──
-const FCM_VAPID = 'REPLACE_WITH_YOUR_FCM_WEB_PUSH_CERTIFICATE_KEY';
-const FCM_SERVER_KEY = 'REPLACE_WITH_YOUR_FCM_SERVER_KEY';
-let messaging = null;
-try { messaging = getMessaging(app); } catch(e) { console.warn('FCM not available', e); }
+// ── Native Web Push (aligned with functions/index.js web-push + VAPID) ──
+const VAPID_PUBLIC = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
 
 async function setupPush(identity) {
-  if (!messaging) return;
+  if (!('PushManager' in window)) { console.log('Push not supported'); return; }
   try {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { console.log('Notifications denied'); return; }
     const swReg = await navigator.serviceWorker.ready;
-    const token = await getToken(messaging, { vapidKey: FCM_VAPID, serviceWorkerRegistration: swReg });
-    if (token) {
-      await set(ref(db, 'fcmTokens/' + identity), token);
-      console.log('FCM token saved for', identity);
-    }
-  } catch(e) { console.warn('Push setup failed', e); }
-}
-
-async function sendFCMNudge(senderIdentity) {
-  const receiver = senderIdentity === 'Leo' ? 'Mimi' : 'Leo';
-  const emoji    = senderIdentity === 'Leo' ? '💙' : '🌸';
-  const snap = await get(ref(db, 'fcmTokens/' + receiver));
-  if (!snap.exists()) { console.log('No FCM token for', receiver); return; }
-  const token = snap.val();
-  const payload = {
-    to: token,
-    notification: {
-      title: emoji + ' ' + senderIdentity + ' is thinking of you!',
-      body: 'Open the app to send a nudge back 💕',
-      icon: 'https://leonardovitolowork-hash.github.io/us-app/icon-192.png',
-      badge: 'https://leonardovitolowork-hash.github.io/us-app/icon-192.png'
-    }
-  };
-  try {
-    await fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'key=' + FCM_SERVER_KEY
-      },
-      body: JSON.stringify(payload)
+    const sub = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: VAPID_PUBLIC
     });
-  } catch(e) { console.warn('FCM send failed', e); }
+    await set(ref(db, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
+    console.log('Push subscription saved for', identity);
+  } catch(e) { console.warn('Push setup failed', e); }
 }
 
 window.DB=db;window.REF=ref;window.PUSH=push;window.REMOVE=remove;window.UPDATE=update;window.SET=set;
 window.TASKS_REF=ref(db,'tasks');
-window.sendFCMNudge=sendFCMNudge;
 window.signInWithGoogle=async()=>{document.getElementById('signInBtn').style.display='none';document.getElementById('lloading').style.display='block';try{await signInWithPopup(auth,prov);}catch(e){document.getElementById('lloading').style.display='none';document.getElementById('signInBtn').style.display='flex';window.showToast('Error: '+(e.code||e.message));}};
 window.doSignOut=async()=>{closeMenu();await signOut(auth);};
 
@@ -516,7 +485,6 @@ onAuthStateChanged(auth,user=>{
   document.getElementById('menuEmail').textContent=user.email;
   const myIdentity=email===ALLOWED[0].toLowerCase()?'Leo':'Mimi';
   window.setIdentity(myIdentity,true);
-  // Setup push notifications for this device
   setTimeout(()=>setupPush(myIdentity), 1500);
   onValue(ref(db,'.info/connected'),s=>{const live=s.val();document.getElementById('syncDot').className='sync-dot '+(live?'live':'err');document.getElementById('syncLbl').textContent=live?'Live':'Away';});
   onValue(ref(db,'tasks'),s=>{window._tasks={};if(s.exists())s.forEach(c=>{window._tasks[c.key]=c.val();});renderTasks();updateStats();});
@@ -591,8 +559,6 @@ window.setMood=setMood;
 function sendNudge(){
   if(!identity)return;
   SET(REF(DB,'nudge'),{from:identity,ts:Date.now()});
-  // Fire FCM push to the other person
-  if(window.sendFCMNudge) window.sendFCMNudge(identity);
   const s=document.getElementById('nudgeSent');
   s.style.display='block';
   setTimeout(()=>s.style.display='none',3000);
