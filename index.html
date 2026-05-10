@@ -447,7 +447,9 @@ body.dark .tag-due-late{background:#3b0a0a;color:#fca5a5}
 </div>
 
 <script>
-// Helper: convert VAPID base64 string to Uint8Array (required by iOS)
+// The CORRECT VAPID public key — must match the server (functions/index.js)
+const VAPID_PUBLIC_KEY = 'BH2ScZoN00qrKzq9dfoI5hey7FEiqf7OKeroOYcKIkWAUfSByh9YTDnPPV9OatgwtYD7IZKj1u6lDZzv2hwSyqI';
+
 function urlB64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -482,18 +484,17 @@ window.bannerRequestPush = async function() {
     // 2. Wait for SW to be ready
     const reg = await navigator.serviceWorker.ready;
 
-    // 3. Check for existing subscription first
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      const VAPID = 'BH2B0QVFuX6fzgQ5z-XirXThGKIuv2QjOJ4TdONScwKnCgsmGUUm3SzdoajOi6OwwPdRx60cJ4m_kydKg1-D-QU';
-      // Convert VAPID key to Uint8Array — required format for iOS
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(VAPID)
-      });
-    }
+    // 3. Always unsubscribe old subscription first (clears any stale/wrong-key sub)
+    const oldSub = await reg.pushManager.getSubscription();
+    if (oldSub) await oldSub.unsubscribe();
 
-    // 4. Save subscription to Firebase
+    // 4. Create fresh subscription with the correct VAPID key
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    // 5. Save subscription to Firebase
     await window.SET(window.REF(window.DB, 'pushTokens/' + identity), JSON.parse(JSON.stringify(sub)));
     document.getElementById('pushBanner').style.display = 'none';
     window.showToast('Notifications enabled! 🔔✨');
