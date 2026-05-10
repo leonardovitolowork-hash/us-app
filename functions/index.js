@@ -33,37 +33,43 @@ async function sendPush(subSnap, payload) {
   }
 }
 
-exports.onNudge = EUfunctions.database.ref('/nudge').onWrite(async (change) => {
-  const nudge = change.after.val();
-  if (!nudge || !nudge.from || !nudge.ts) return null;
-  const target = nudge.from === 'Leo' ? 'Mimi' : 'Leo';
-  const subSnap = await db.ref('pushTokens/' + target).once('value');
-  const emoji = nudge.from === 'Leo' ? '💙' : '🌸';
-  await sendPush(subSnap, {
-    title: 'Us ♥',
-    body: emoji + ' ' + nudge.from + ' is thinking of you! 💕',
-    icon: '/us-app/icon-192.png',
-    badge: '/us-app/icon-192.png',
-    tag: 'nudge',
-    url: 'https://leonardovitolowork-hash.github.io/us-app/'
+exports.onNudge = EUfunctions.database
+  .instance('to-do-58ecc-default-rtdb')
+  .ref('/nudge')
+  .onWrite(async (change) => {
+    const nudge = change.after.val();
+    if (!nudge || !nudge.from || !nudge.ts) return null;
+    const target = nudge.from === 'Leo' ? 'Mimi' : 'Leo';
+    const subSnap = await db.ref('pushTokens/' + target).once('value');
+    const emoji = nudge.from === 'Leo' ? '💙' : '🌸';
+    await sendPush(subSnap, {
+      title: 'Us ♥',
+      body: emoji + ' ' + nudge.from + ' is thinking of you! 💕',
+      icon: '/us-app/icon-192.png',
+      badge: '/us-app/icon-192.png',
+      tag: 'nudge',
+      url: 'https://leonardovitolowork-hash.github.io/us-app/'
+    });
+    return null;
   });
-  return null;
-});
 
-exports.onNewTask = EUfunctions.database.ref('/tasks/{taskId}').onCreate(async (snap) => {
-  const task = snap.val();
-  if (!task || !task.addedBy || !task.text) return null;
-  const target = task.addedBy === 'Leo' ? 'Mimi' : 'Leo';
-  const subSnap = await db.ref('pushTokens/' + target).once('value');
-  const assign = task.assign === 'Leo' ? '💙 Leo' : task.assign === 'Mimi' ? '🌸 Mimi' : '💑 Both';
-  const urgent = task.urgent ? ' ⚡' : '';
-  await sendPush(subSnap, {
-    title: (task.addedBy === 'Leo' ? '💙 Leo' : '🌸 Mimi') + ' added a task' + urgent,
-    body: '"' + task.text + '" → ' + assign,
-    icon: '/us-app/icon-192.png',
-    badge: '/us-app/icon-192.png',
-    tag: 'new-task-' + snap.key,
-    url: 'https://leonardovitolowork-hash.github.io/us-app/'
+exports.onNewTask = EUfunctions.database
+  .instance('to-do-58ecc-default-rtdb')
+  .ref('/tasks/{taskId}')
+  .onCreate(async (snap) => {
+    const task = snap.val();
+    if (!task || !task.addedBy || !task.text) return null;
+    const target = task.addedBy === 'Leo' ? 'Mimi' : 'Leo';
+    const subSnap = await db.ref('pushTokens/' + target).once('value');
+    const assign = task.assign === 'Leo' ? '💙 Leo' : task.assign === 'Mimi' ? '🌸 Mimi' : '💑 Both';
+    const urgent = task.urgent ? ' ⚡' : '';
+    await sendPush(subSnap, {
+      title: (task.addedBy === 'Leo' ? '💙 Leo' : '🌸 Mimi') + ' added a task' + urgent,
+      body: '"' + task.text + '" → ' + assign,
+      icon: '/us-app/icon-192.png',
+      badge: '/us-app/icon-192.png',
+      tag: 'new-task-' + snap.key,
+      url: 'https://leonardovitolowork-hash.github.io/us-app/'
+    });
+    return null;
   });
-  return null;
-});
